@@ -24,6 +24,11 @@ export class AppController {
     private dbService: DatabaseService,
   ) {}
 
+  @Get()
+  getHello(): string {
+    return 'Yeti Backend API is running! 🚀';
+  }
+
   // Protected endpoint to get user profile
   @Get('auth/profile')
   @UseGuards(JwtAuthGuard)
