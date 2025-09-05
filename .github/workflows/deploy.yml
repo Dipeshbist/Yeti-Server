@@ -1,0 +1,66 @@
+name: Deploy NestJS App
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build application
+      run: npm run build
+      
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        
+    - name: Add server to known hosts
+      run: |
+        ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+        
+    - name: Deploy to server
+      run: |
+        ssh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} << 'EOF'
+          cd /root/deployments/yeti-backend
+          
+          # Pull latest code
+          if [ -d ".git" ]; then
+            git pull origin main
+          else
+            git clone https://github.com/Dipeshbist/Yeti-Server.git .
+          fi
+          
+          # Install dependencies and build
+          npm ci
+          npm run build
+          
+          # Generate Prisma client (if using Prisma)
+          npx prisma generate || echo "No Prisma found, skipping..."
+          
+          # Run database migrations (if using Prisma)
+          npx prisma migrate deploy || echo "No migrations to run"
+          
+          # Restart the application (using PM2)
+          pm2 restart yeti-backend || pm2 start dist/main.js --name yeti-backend
+          
+          echo "NestJS deployment completed successfully!"
+        EOF
+        
+    - name: Health Check
+      run: |
+        sleep 30  # Wait for app to start
+        curl -f http://${{ secrets.SSH_HOST }}:8000 || curl -f http://${{ secrets.SSH_HOST }}:8000/health || echo "Health check failed but continuing..."

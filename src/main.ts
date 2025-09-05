@@ -28,12 +28,17 @@ async function bootstrap() {
 
   app.enableCors({
     origin: true, // Allow all origins - DEVELOPMENT ONLY
+    // origin: [
+    //   'http://localhost:3000',
+    //   'http://localhost:5173',
+    //   // Add your frontend domain when ready
+    // ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  const port = process.env.PORT ?? 8081;
+  const port = process.env.PORT ?? 8000;
   await app.listen(port, '0.0.0.0'); // <-- Keep this
 
   console.log(`🚀 Backend server is running on: http://0.0.0.0:${port}`);
