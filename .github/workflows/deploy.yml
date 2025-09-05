@@ -3,6 +3,8 @@ name: Deploy NestJS App
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -30,12 +32,14 @@ jobs:
         
     - name: Add server to known hosts
       run: |
+        mkdir -p ~/ .ssh
         ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+        chmod 644 ~/ .ssh/known_hosts
         
     - name: Deploy to server
       run: |
         ssh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} << 'EOF'
-          cd /root/deployments/yeti-backend
+          cd /home/${{ secrets.SSH_USERNAME }}/deployments/yeti-backend
           
           # Pull latest code
           if [ -d ".git" ]; then
@@ -48,19 +52,8 @@ jobs:
           npm ci
           npm run build
           
-          # Generate Prisma client (if using Prisma)
-          npx prisma generate || echo "No Prisma found, skipping..."
-          
-          # Run database migrations (if using Prisma)
-          npx prisma migrate deploy || echo "No migrations to run"
-          
           # Restart the application (using PM2)
           pm2 restart yeti-backend || pm2 start dist/main.js --name yeti-backend
           
           echo "NestJS deployment completed successfully!"
         EOF
-        
-    - name: Health Check
-      run: |
-        sleep 30  # Wait for app to start
-        curl -f http://${{ secrets.SSH_HOST }}:8000 || curl -f http://${{ secrets.SSH_HOST }}:8000/health || echo "Health check failed but continuing..."
