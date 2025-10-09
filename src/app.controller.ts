@@ -45,7 +45,7 @@ export class AppController {
     const customerId = req.user.customerId;
 
     return this.tb.getCustomerDashboards(customerId, {
-      page: page ? Number(page) : 0,
+      page: page ? Number(page) : 0, // Converts "2" to 2, or defaults to 0
       pageSize: 10,
     });
   }
@@ -53,7 +53,6 @@ export class AppController {
   @Get('my-devices')
   @UseGuards(JwtAuthGuard)
   async getMyDevices(@Request() req) {
-    // ADD additional security validation
     if (!req.user || !req.user.customerId) {
       throw new UnauthorizedException('Invalid user context');
     }
@@ -148,7 +147,7 @@ export class AppController {
     const list = (ids ?? '')
       .split(',')
       .map((s) => s.trim())
-      .filter(Boolean);
+      .filter(Boolean); // Remove empty strings
     return this.tb.getDevicesByIds(list);
   }
 
@@ -263,7 +262,10 @@ export class AppController {
       deviceId,
       keyArray,
     );
-    const attributes = await this.tb.getDeviceAttributes(deviceId);
+    const attributes = await this.tb.getDeviceAttributes(
+      deviceId,
+      'SERVER_SCOPE',
+    );
 
     return {
       deviceId,
@@ -294,8 +296,9 @@ export class AppController {
     let keyArray: string[] = [];
 
     if (keys && keys.trim()) {
-      keyArray = keys.split(',').filter(Boolean);
+      keyArray = keys.split(',').filter(Boolean); //User puts sensor names in the URL: ?keys=temperature,humidity
     } else {
+      //User doesn't specify sensors in URL: /devices/123/live. User Wants Everything
       try {
         const availableKeys = await this.tb.getDeviceTelemetryKeys(deviceId);
         keyArray = availableKeys || [];
@@ -447,7 +450,7 @@ export class AppController {
       data: liveTelemetry,
       timestamp: Date.now(),
       maxAgeSeconds,
-      dataCount: Object.keys(liveTelemetry).length,
+      dataCount: Object.keys(liveTelemetry).length, // used to give length of data
       keys: keyArray,
       isLive: Object.values(liveTelemetry).some((item) => item.isLive),
     };

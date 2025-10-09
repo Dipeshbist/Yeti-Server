@@ -62,13 +62,13 @@ export type DeviceInfoQuery = {
 @Injectable()
 export class TbService {
   private readonly log = new Logger(TbService.name);
-  private jwt: string | null = null;
-  private jwtExpMs = 0;
+  private jwt: string | null = null; // Stores the authentication token from ThingsBoard: initially null
+  private jwtExpMs = 0; // Stores when the JWT token expires (in milliseconds): intially 0
 
   constructor(private http: HttpService) {
     // Validate required environment variables
     const requiredVars = ['TB_BASE_URL', 'TB_USERNAME', 'TB_PASSWORD'];
-    const missing = requiredVars.filter((varName) => !process.env[varName]);
+    const missing = requiredVars.filter((varName) => !process.env[varName]); //Check Which environment variables Are Missing
 
     if (missing.length > 0) {
       throw new Error(
