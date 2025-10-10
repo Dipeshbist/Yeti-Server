@@ -12,7 +12,7 @@ async function bootstrap() {
 
   app.enableCors({
     // origin: true, // Allow all origins - DEVELOPMENT ONLY
-    origin: ['http://localhost:5143', 'https://yeti.nepaldigital.systems'],
+    origin: ['http://localhost:5143', 'https://www.garud.cloud/'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
