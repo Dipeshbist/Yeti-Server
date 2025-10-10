@@ -31,28 +31,28 @@ export class AuthService {
         password: 'admin123',
         firstName: 'Admin',
         lastName: 'User',
-        customerId: '1692cc40-7d8f-11f0-84bb-ed3221ace2b1',
+        customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
       },
       'test@demo.com': {
         email: 'test@demo.com',
         password: 'test123',
         firstName: 'Test',
         lastName: 'User',
-        customerId: '1692cc40-7d8f-11f0-84bb-ed3221ace2b1',
+        customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
       },
       'nds@company.com': {
         email: 'nds@company.com',
         password: 'nds123',
         firstName: 'NDS',
         lastName: 'User',
-        customerId: '16903430-7d8f-11f0-84bb-ed3221ace2b1',
+        customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
       },
       'test@yeti.com': {
         email: 'test@yeti.com',
         password: 'test123',
         firstName: 'Test',
         lastName: 'User',
-        customerId: '1692cc40-7d8f-11f0-84bb-ed3221ace2b1',
+        customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
       },
       // Add more users here as needed
     };
