@@ -33,35 +33,35 @@ export class AuthService {
         lastName: 'User',
         customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
       },
-      'test@demo.com': {
-        email: 'test@demo.com',
-        password: 'test123',
-        firstName: 'Test',
-        lastName: 'User',
-        customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
-      },
-      'nds@company.com': {
-        email: 'nds@company.com',
-        password: 'nds123',
-        firstName: 'NDS',
-        lastName: 'User',
-        customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
-      },
-      'test@yeti.com': {
-        email: 'test@yeti.com',
-        password: 'test123',
-        firstName: 'Test',
-        lastName: 'User',
-        customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
-      },
+      // 'test@demo.com': {
+      //   email: 'test@demo.com',
+      //   password: 'test123',
+      //   firstName: 'Test',
+      //   lastName: 'User',
+      //   customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
+      // },
+      // 'nds@company.com': {
+      //   email: 'nds@company.com',
+      //   password: 'nds123',
+      //   firstName: 'NDS',
+      //   lastName: 'User',
+      //   customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
+      // },
+      // 'test@yeti.com': {
+      //   email: 'test@yeti.com',
+      //   password: 'test123',
+      //   firstName: 'Test',
+      //   lastName: 'User',
+      //   customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
+      // },
 
-      'test@garud.cloud': {
-        email: 'test@garud.cloud',
-        password: 'test123',
-        firstName: 'Test',
-        lastName: 'User',
-        customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
-      },
+      // 'test@garud.cloud': {
+      //   email: 'test@garud.cloud',
+      //   password: 'test123',
+      //   firstName: 'Test',
+      //   lastName: 'User',
+      //   customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
+      // },
       // Add more users here as needed
     };
 
