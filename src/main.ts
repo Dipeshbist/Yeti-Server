@@ -14,7 +14,8 @@ async function bootstrap() {
     // origin: true, // Allow all origins - DEVELOPMENT ONLY
     origin: [
       'http://localhost:5143',
-      'https://www.garud.cloud, https://garud.cloud ',
+      'https://www.garud.cloud',
+      'https://garud.cloud',
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
