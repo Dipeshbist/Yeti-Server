@@ -54,6 +54,14 @@ export class AuthService {
         lastName: 'User',
         customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
       },
+
+      'test@garud.cloud': {
+        email: 'test@garud.cloud',
+        password: 'test123',
+        firstName: 'Test',
+        lastName: 'User',
+        customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
+      },
       // Add more users here as needed
     };
 
