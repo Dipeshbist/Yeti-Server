@@ -30,14 +30,14 @@ export class AppController {
   }
 
   // Protected endpoint to get user profile
-  @Get('auth/profile')
-  @UseGuards(JwtAuthGuard)
-  getProfile(@Request() req) {
-    return {
-      success: true,
-      user: req.user,
-    };
-  }
+  // @Get('auth/profile')
+  // @UseGuards(JwtAuthGuard)
+  // getProfile(@Request() req) {
+  //   return {
+  //     success: true,
+  //     user: req.user,
+  //   };
+  // }
 
   @Get('my-dashboards')
   @UseGuards(JwtAuthGuard)
