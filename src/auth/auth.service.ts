@@ -26,13 +26,13 @@ export class AuthService {
     };
 
     const userMappings: Record<string, ManualUser> = {
-      'admin@company.com': {
-        email: 'admin@company.com',
-        password: 'admin123',
-        firstName: 'Admin',
-        lastName: 'User',
-        customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
-      },
+      // 'admin@company.com': {
+      //   email: 'admin@company.com',
+      //   password: 'admin123',
+      //   firstName: 'Admin',
+      //   lastName: 'User',
+      //   customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
+      // },
       // 'test@demo.com': {
       //   email: 'test@demo.com',
       //   password: 'test123',
@@ -62,6 +62,13 @@ export class AuthService {
       //   lastName: 'User',
       //   customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
       // },
+      'test@garud.com': {
+        email: 'test@garud.com',
+        password: 'test123',
+        firstName: 'Admin',
+        lastName: 'User',
+        customerId: 'ff6df8c0-a596-11f0-a310-85b2fcee570f',
+      },
       // Add more users here as needed
     };
 
