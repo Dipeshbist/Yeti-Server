@@ -19,28 +19,26 @@ jobs:
       with:
         node-version: '20'
 
-    # 3️⃣ Install dependencies locally (optional precheck)
+    # 3️⃣ Install dependencies and build locally (verifies build works)
     - name: Install dependencies
       run: npm ci
 
-    # 4️⃣ Build application locally (verifies build passes before deployment)
     - name: Build application
       run: npm run build
 
-    # 5️⃣ Setup SSH for remote server connection
+    # 4️⃣ Setup SSH connection
     - name: Setup SSH
       uses: webfactory/ssh-agent@v0.8.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    # 6️⃣ Add server to known hosts (avoids SSH prompts)
     - name: Add server to known hosts
       run: |
         mkdir -p ~/.ssh
         ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
         chmod 644 ~/.ssh/known_hosts
 
-    # 7️⃣ Deploy code to your Ubuntu server
+    # 5️⃣ Deploy to server
     - name: Deploy to server
       env:
         SSH_AUTH_SOCK: ${{ env.SSH_AUTH_SOCK }}
@@ -48,37 +46,39 @@ jobs:
         ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} << 'EOF'
           set -e  # stop script if any command fails
 
-          # Navigate to correct folder
-          cd /root/deployments/yeti-backend/Yeti-Server || \
-          git clone https://github.com/Dipeshbist/Yeti-Server.git /root/deployments/yeti-backend/Yeti-Server
+          cd /root/deployments/yeti-backend || mkdir -p /root/deployments/yeti-backend
+          cd /root/deployments/yeti-backend
 
-          cd /root/deployments/yeti-backend/Yeti-Server
+          if [ ! -d "Yeti-Server" ]; then
+            echo "📦 Cloning repository for the first time..."
+            git clone https://github.com/Dipeshbist/Yeti-Server.git
+          fi
 
-          # Pull latest code
-          echo "📦 Pulling latest code from main..."
+          cd Yeti-Server
+
+          echo "📥 Pulling latest code from main..."
           git fetch origin main
           git reset --hard origin/main
 
-          # Install dependencies and rebuild
           echo "⚙️ Installing dependencies..."
           npm ci
 
-          echo "🏗️ Building application..."
+          echo "🏗️ Building project..."
           npm run build
 
-          # Prisma (optional, safe to skip if not used)
-          npx prisma generate || echo "⚠️ No Prisma found, skipping client generation"
+          echo "📘 Running Prisma setup..."
+          npx prisma generate || echo "⚠️ Prisma client generation skipped"
           npx prisma migrate deploy || echo "⚠️ No pending migrations"
 
-          # Restart using PM2
-          echo "🚀 Restarting PM2 service..."
-          pm2 restart yeti-backend || pm2 start dist/main.js --name yeti-backend
+          echo "🚀 Restarting backend with PM2..."
+          pm2 delete yeti-backend || true
+          pm2 start dist/main.js --name yeti-backend
           pm2 save
 
           echo "✅ Deployment completed successfully!"
         EOF
 
-    # 8️⃣ Health check
+    # 6️⃣ Health Check
     - name: Health Check
       run: |
         echo "🩺 Running health check..."
