@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
@@ -10,6 +11,8 @@ import {
   UseGuards,
   Request,
   UnauthorizedException,
+  BadRequestException,
+  Delete,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { TbService } from './tb/Tb.Service';
@@ -39,13 +42,35 @@ export class AppController {
   //   };
   // }
 
+  // @Get('my-dashboards')
+  // @UseGuards(JwtAuthGuard)
+  // async getMyDashboards(@Request() req, @Query('page') page?: string) {
+  //   const customerId = req.user.customerId;
+
+  //   return this.tb.getCustomerDashboards(customerId, {
+  //     page: page ? Number(page) : 0, // Converts "2" to 2, or defaults to 0
+  //     pageSize: 10,
+  //   });
+  // }
+
   @Get('my-dashboards')
   @UseGuards(JwtAuthGuard)
   async getMyDashboards(@Request() req, @Query('page') page?: string) {
-    const customerId = req.user.customerId;
+    const { role, customerId } = req.user;
 
+    if (role === 'admin') {
+      // ✅ ensure both page & pageSize are provided (or rely on service defaults)
+      return this.tb.getAllDashboards({
+        page: page ? Number(page) : 0,
+        pageSize: 10,
+      });
+    }
+
+    if (!customerId) {
+      throw new BadRequestException('Customer ID missing for this user.');
+    }
     return this.tb.getCustomerDashboards(customerId, {
-      page: page ? Number(page) : 0, // Converts "2" to 2, or defaults to 0
+      page: page ? Number(page) : 0,
       pageSize: 10,
     });
   }
@@ -65,6 +90,77 @@ export class AppController {
     });
   }
 
+  @Get('admin/users/:userId/dashboards')
+  @UseGuards(JwtAuthGuard)
+  async getUserDashboards(@Param('userId') userId: string, @Request() req) {
+    if (req.user.role !== 'admin')
+      throw new UnauthorizedException('Admins only');
+
+    const user = await this.dbService.user.findUnique({
+      where: { id: userId },
+    });
+
+    // ✅ If the target is an admin with no customerId -> return tenant dashboards
+    if (!user?.customerId) {
+      if (user?.role === 'admin') {
+        return this.tb.getAllDashboards({ pageSize: 10, page: 0 });
+      }
+      throw new BadRequestException('User has no customerId');
+    }
+
+    return this.tb.getCustomerDashboards(user.customerId, {
+      pageSize: 10,
+      page: 0,
+    });
+  }
+
+  // Get devices for a specific user (admin only)
+  @Get('admin/users/:userId/devices')
+  @UseGuards(JwtAuthGuard)
+  async getUserDevices(@Param('userId') userId: string, @Request() req) {
+    if (req.user.role !== 'admin')
+      throw new UnauthorizedException('Admins only');
+
+    const user = await this.dbService.user.findUnique({
+      where: { id: userId },
+    });
+
+    // ✅ If the target is an admin with no customerId -> return tenant devices
+    if (!user?.customerId) {
+      if (user?.role === 'admin') {
+        return this.tb.getAllDevices({ pageSize: 10, page: 0 });
+      }
+      throw new BadRequestException('User has no customerId');
+    }
+
+    return this.tb.getCustomerDeviceInfos(user.customerId, {
+      page: 0,
+      pageSize: 10,
+    });
+  }
+
+  @Get('admin/tenant/dashboards')
+  @UseGuards(JwtAuthGuard)
+  async getTenantDashboards(@Request() req, @Query('page') page?: string) {
+    if (req.user.role !== 'admin')
+      throw new UnauthorizedException('Admins only');
+    return this.tb.getAllDashboards({
+      page: page ? Number(page) : 0,
+      pageSize: 10,
+    });
+  }
+
+  @Get('admin/tenant/devices')
+  @UseGuards(JwtAuthGuard)
+  async getTenantDevices(@Request() req, @Query('page') page?: string) {
+    if (req.user.role !== 'admin')
+      throw new UnauthorizedException('Admins only');
+    return this.tb.getAllDevices({
+      page: page ? Number(page) : 0,
+      pageSize: 10,
+    });
+  }
+
   // GET /devices/info/:id  → matches Swagger /api/device/info/{id}
   @Get('devices/info/:id')
   @UseGuards(JwtAuthGuard)
@@ -72,7 +168,10 @@ export class AppController {
     const deviceInfo = await this.tb.getDeviceInfo(id);
 
     // Validate device belongs to user's customer
-    if (deviceInfo.customerId?.id !== req.user.customerId) {
+    if (
+      req.user.role !== 'admin' &&
+      deviceInfo.customerId?.id !== req.user.customerId
+    ) {
       throw new UnauthorizedException('Access denied to this device');
     }
 
@@ -88,7 +187,10 @@ export class AppController {
     // Get full device info to check ownership
     if (device?.id?.id) {
       const deviceInfo = await this.tb.getDeviceInfo(device.id.id);
-      if (deviceInfo.customerId?.id !== req.user.customerId) {
+      if (
+        req.user.role !== 'admin' &&
+        deviceInfo.customerId?.id !== req.user.customerId
+      ) {
         throw new UnauthorizedException('Access denied to this device');
       }
     }
@@ -106,7 +208,10 @@ export class AppController {
   ) {
     // Verify device ownership first
     const deviceInfo = await this.tb.getDeviceInfo(id);
-    if (deviceInfo.customerId?.id !== req.user.customerId) {
+    if (
+      req.user.role !== 'admin' &&
+      deviceInfo.customerId?.id !== req.user.customerId
+    ) {
       throw new UnauthorizedException('Access denied to this device');
     }
 
@@ -127,7 +232,10 @@ export class AppController {
   ) {
     // Verify device ownership
     const deviceInfo = await this.tb.getDeviceInfo(id);
-    if (deviceInfo.customerId?.id !== req.user.customerId) {
+    if (
+      req.user.role !== 'admin' &&
+      deviceInfo.customerId?.id !== req.user.customerId
+    ) {
       throw new UnauthorizedException('Access denied to this device');
     }
 
@@ -240,20 +348,43 @@ export class AppController {
   ) {
     // Verify device ownership
     const deviceInfo = await this.tb.getDeviceInfo(deviceId);
-    if (deviceInfo.customerId?.id !== req.user.customerId) {
+    if (
+      req.user.role !== 'admin' &&
+      deviceInfo.customerId?.id !== req.user.customerId
+    ) {
       throw new UnauthorizedException('Access denied to this device');
     }
 
-    let keyArray: string[] = [];
+    // --- ONLINE CHECK: lastActivityTime must be recent (<= 10s) ---
+    const attrs = await this.tb.getDeviceAttributes(deviceId, 'SERVER_SCOPE');
+    const last = Array.isArray(attrs)
+      ? attrs.find((a: any) => a.key === 'lastActivityTime')
+      : null;
+    const now = Date.now();
+    const lastTs = last ? Number(last.value) : 0;
+    const isOnline = !!lastTs && now - lastTs <= 10_000;
 
+    // If offline, return empty telemetry immediately
+    if (!isOnline) {
+      return {
+        deviceId,
+        timestamp: now,
+        telemetry: {}, // ⛔ empty
+        attributes: attrs ?? {},
+        keys: [],
+        customer: req.user.customerId,
+      };
+    }
+
+    // Build key list (if still online)
+    let keyArray: string[] = [];
     if (keys && keys.trim()) {
       keyArray = keys.split(',').filter(Boolean);
     } else {
       try {
         const availableKeys = await this.tb.getDeviceTelemetryKeys(deviceId);
         keyArray = availableKeys || [];
-      } catch (error) {
-        console.error('Failed to get telemetry keys:', error);
+      } catch {
         keyArray = [];
       }
     }
@@ -262,16 +393,12 @@ export class AppController {
       deviceId,
       keyArray,
     );
-    const attributes = await this.tb.getDeviceAttributes(
-      deviceId,
-      'SERVER_SCOPE',
-    );
 
     return {
       deviceId,
       timestamp: Date.now(),
       telemetry,
-      attributes,
+      attributes: attrs ?? {},
       keys: keyArray,
       customer: req.user.customerId,
     };
@@ -287,21 +414,28 @@ export class AppController {
     @Query('limit') limit: string = '1000',
     @Request() req?,
   ) {
-    // Verify device ownership
+    // Verify device ownership (admins bypass)
     const deviceInfo = await this.tb.getDeviceInfo(deviceId);
-    if (deviceInfo.customerId?.id !== req.user.customerId) {
+    if (
+      req.user.role !== 'admin' &&
+      deviceInfo.customerId?.id !== req.user.customerId
+    ) {
       throw new UnauthorizedException('Access denied to this device');
     }
 
+    // Build the key list
     let keyArray: string[] = [];
-
     if (keys && keys.trim()) {
-      keyArray = keys.split(',').filter(Boolean); //User puts sensor names in the URL: ?keys=temperature,humidity
+      keyArray = keys
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
     } else {
-      //User doesn't specify sensors in URL: /devices/123/live. User Wants Everything
       try {
         const availableKeys = await this.tb.getDeviceTelemetryKeys(deviceId);
-        keyArray = availableKeys || [];
+        keyArray = (availableKeys ?? [])
+          .map((s: string) => String(s).trim())
+          .filter(Boolean);
       } catch (error) {
         console.error(
           'Failed to get telemetry keys for device:',
@@ -312,11 +446,28 @@ export class AppController {
       }
     }
 
-    const hoursNum = parseInt(hours) || 24;
-    const limitNum = parseInt(limit) || 1000;
+    const hoursNum = Number.isFinite(parseInt(hours)) ? parseInt(hours) : 24;
+    const limitNum = Number.isFinite(parseInt(limit)) ? parseInt(limit) : 1000;
 
     const endTs = Date.now();
     const startTs = endTs - hoursNum * 60 * 60 * 1000;
+
+    // ✅ Guard: if no keys, don't call TB (prevents 500 from ?keys=)
+    if (!keyArray.length) {
+      return {
+        deviceId,
+        timeRange: {
+          start: new Date(startTs).toISOString(),
+          end: new Date(endTs).toISOString(),
+          hours: hoursNum,
+        },
+        data: {},
+        totalPoints: 0,
+        keys: [],
+        customer: req.user.customerId,
+        note: 'No telemetry keys available for this device.',
+      };
+    }
 
     try {
       const data = await this.tb.getHistoricalTelemetry(
@@ -339,6 +490,7 @@ export class AppController {
           (sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0),
           0,
         ),
+        keys: keyArray,
         customer: req.user.customerId,
       };
     } catch (error) {
@@ -352,6 +504,7 @@ export class AppController {
         },
         data: {},
         totalPoints: 0,
+        keys: keyArray,
         error: 'Failed to fetch historical data',
       };
     }
@@ -366,7 +519,10 @@ export class AppController {
   ) {
     // Verify ownership first
     const deviceInfo = await this.tb.getDeviceInfo(deviceId);
-    if (deviceInfo.customerId?.id !== req.user.customerId) {
+    if (
+      req.user.role !== 'admin' &&
+      deviceInfo.customerId?.id !== req.user.customerId
+    ) {
       throw new UnauthorizedException('Access denied to this device');
     }
     try {
@@ -413,12 +569,15 @@ export class AppController {
   async getLiveData(
     @Param('deviceId') deviceId: string,
     @Query('keys') keys?: string,
-    @Query('maxAge') maxAge: string = '30', // Max age in seconds
+    @Query('maxAge') maxAge: string = '30',
     @Request() req?,
   ) {
     // Verify device ownership
     const deviceInfo = await this.tb.getDeviceInfo(deviceId);
-    if (deviceInfo.customerId?.id !== req.user.customerId) {
+    if (
+      req.user.role !== 'admin' &&
+      deviceInfo.customerId?.id !== req.user.customerId
+    ) {
       throw new UnauthorizedException('Access denied to this device');
     }
     // Handle undefined or empty keys
@@ -436,9 +595,20 @@ export class AppController {
       }
     }
 
-    const maxAgeSeconds = parseInt(maxAge);
+    // ✅ If still empty, DO NOT call TB; return an empty result
+    if (!keyArray.length) {
+      return {
+        deviceId,
+        data: {},
+        timestamp: Date.now(),
+        maxAgeSeconds: parseInt(maxAge),
+        dataCount: 0,
+        keys: [],
+        isLive: false,
+      };
+    }
 
-    // Get only fresh/live telemetry data
+    const maxAgeSeconds = parseInt(maxAge);
     const liveTelemetry = await this.tb.getLiveTelemetryValues(
       deviceId,
       keyArray,
@@ -450,7 +620,7 @@ export class AppController {
       data: liveTelemetry,
       timestamp: Date.now(),
       maxAgeSeconds,
-      dataCount: Object.keys(liveTelemetry).length, // used to give length of data
+      dataCount: Object.keys(liveTelemetry).length,
       keys: keyArray,
       isLive: Object.values(liveTelemetry).some((item) => item.isLive),
     };
@@ -465,7 +635,10 @@ export class AppController {
   ) {
     // Verify device ownership
     const deviceInfo = await this.tb.getDeviceInfo(deviceId);
-    if (deviceInfo.customerId?.id !== req.user.customerId) {
+    if (
+      req.user.role !== 'admin' &&
+      deviceInfo.customerId?.id !== req.user.customerId
+    ) {
       throw new UnauthorizedException('Access denied to this device');
     }
 
@@ -489,5 +662,15 @@ export class AppController {
         error: 'Failed to fetch device attributes',
       };
     }
+  }
+
+  @Delete('admin/users/delete/:id')
+  @UseGuards(JwtAuthGuard)
+  async deleteUser(@Param('id') id: string, @Request() req) {
+    if (req.user.role !== 'admin')
+      throw new UnauthorizedException('Admins only');
+
+    await this.dbService.user.delete({ where: { id } });
+    return { success: true, message: 'User deleted successfully' };
   }
 }

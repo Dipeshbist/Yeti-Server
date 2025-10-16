@@ -7,8 +7,13 @@ export class DatabaseService
   implements OnModuleInit, OnModuleDestroy
 {
   async onModuleInit() {
-    await this.$connect();
-    console.log('✅ Database connected successfully');
+    try {
+      await this.$connect();
+      console.log('✅ Database connected successfully');
+    } catch (err) {
+      console.error('❌ Database connection failed', err);
+      throw err;
+    }
   }
 
   async onModuleDestroy() {
@@ -23,8 +28,7 @@ export class DatabaseService
   }
 
   async findUserById(id: string) {
-    return this.user.findUnique({
-      where: { id, isActive: true },
-    });
+    const user = await this.user.findUnique({ where: { id } });
+    return user && user.isActive ? user : null;
   }
 }

@@ -3,13 +3,6 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { DatabaseService } from '../database/database.service';
 
-interface JwtPayload {
-  sub: string;
-  email: string;
-  customerId: string;
-  [key: string]: any;
-}
-
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly db: DatabaseService) {
@@ -24,17 +17,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload) {
-    // Validate user exists in database
-    const user = await this.db.findUserById(payload.sub);
-
-    if (!user || !user.isActive) {
+  async validate(payload: {
+    sub: string;
+    email: string;
+    role: string;
+    customerId: string | null;
+  }) {
+    const user = await this.db.user.findUnique({ where: { id: payload.sub } });
+    if (!user || !user.isActive)
       throw new UnauthorizedException('User not found or inactive');
-    }
 
     return {
-      id: payload.sub,
+      userId: payload.sub,
       email: payload.email,
+      role: payload.role,
       customerId: payload.customerId,
     };
   }

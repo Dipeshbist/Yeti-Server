@@ -7,17 +7,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  admin
+  user
+}
+
+enum UserStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
 model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  password    String
-  firstName   String?
-  lastName    String?
-  isActive    Boolean  @default(true)
-  customerId  String
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  id        String  @id @default(uuid())
+  email     String  @unique
+  password  String
+  firstName String?
+  lastName  String?
+  isActive  Boolean @default(true)
+
+  role         UserRole   @default(user)
+  status       UserStatus @default(PENDING)
+  customerId   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  auditLogsCreated AuditLog[] @relation("AuditActor")
+  auditLogsTarget  AuditLog[] @relation("AuditTarget")
+
   @@map("users")
+}
+
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  action    String
+  details   String?
+
+  actorId      String?
+  targetUserId String?
+
+  // ✅ Match relation names to opposite sides
+  actor      User? @relation("AuditActor", fields: [actorId], references: [id])
+  targetUser User? @relation("AuditTarget", fields: [targetUserId], references: [id])
 }

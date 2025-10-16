@@ -143,8 +143,50 @@ export class TbService {
     return deviceInfo;
   }
 
+  // Add/replace this
+  async getAllDashboards(params: DashboardListParams = {}) {
+    const pageSize = params.pageSize ?? 10;
+    const page = params.page ?? 0; // ✅ ensure page is present
+
+    const qs = new URLSearchParams();
+    qs.set('pageSize', String(pageSize));
+    qs.set('page', String(page));
+
+    const url = `${this.base()}/api/tenant/dashboards?${qs.toString()}`;
+
+    // Optional: log for debugging
+    // this.log.debug(`TB getAllDashboards -> ${url}`);
+
+    const { data } = await firstValueFrom(
+      this.http.get(url, { headers: await this.authHeaders() }),
+    );
+    return data;
+  }
+
+  async getAllDevices(params: DeviceInfoQuery = {}) {
+    const pageSize = params.pageSize ?? 10;
+    const page = params.page ?? 0;
+
+    const qs = new URLSearchParams();
+    qs.set('pageSize', String(pageSize));
+    qs.set('page', String(page));
+
+    const url = `${this.base()}/api/tenant/deviceInfos?${qs.toString()}`;
+    const { data } = await firstValueFrom(
+      this.http.get(url, { headers: await this.authHeaders() }),
+    );
+    return data;
+  }
+
   // ---- TELEMETRY (latest + time-series) ----
   async getLatestTelemetry(deviceId: string, keys: string[]) {
+    // ✅ Guard
+    // if (!keys || !keys.length) {
+    //   this.log.warn(
+    //     `Skipping latest telemetry fetch for ${deviceId}: empty keys`,
+    //   );
+    //   return {};
+    // }
     const url = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/timeseries?keys=${keys.join(',')}&limit=1&useStrictDataTypes=true`;
     const { data } = await firstValueFrom(
       this.http.get(url, { headers: await this.authHeaders() }),
@@ -167,6 +209,11 @@ export class TbService {
     endTs: number,
     limit = 1000,
   ) {
+    // ✅ Guard
+    if (!keys || !keys.length) {
+      this.log.warn(`Skipping timeseries fetch for ${deviceId}: empty keys`);
+      return {};
+    }
     const url = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/timeseries?keys=${keys.join(',')}&startTs=${startTs}&endTs=${endTs}&limit=${limit}&useStrictDataTypes=true`;
     const { data } = await firstValueFrom(
       this.http.get(url, { headers: await this.authHeaders() }),
@@ -304,6 +351,14 @@ export class TbService {
 
   // Get latest telemetry values
   async getLatestTelemetryValues(deviceId: string, keys: string[]) {
+    // ✅ Guard
+    // if (!keys || !keys.length) {
+    //   this.log.warn(
+    //     `Skipping latest-timeseries-values for ${deviceId}: empty keys`,
+    //   );
+    //   return {};
+    // }
+
     const url = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/timeseries?keys=${keys.join(',')}&useStrictDataTypes=true`;
     const { data } = await firstValueFrom(
       this.http.get(url, { headers: await this.authHeaders() }),
@@ -330,6 +385,13 @@ export class TbService {
     endTs: number,
     limit: number = 1000,
   ) {
+    // ✅ Guard
+    if (!keys || !keys.length) {
+      this.log.warn(
+        `Skipping historical telemetry fetch for ${deviceId}: empty keys`,
+      );
+      return {};
+    }
     const url = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/timeseries`;
     const params = {
       keys: keys.join(','),
@@ -405,15 +467,47 @@ export class TbService {
     keys: string[],
     timeWindowSeconds: number = 30,
   ) {
-    const now = Date.now();
-    const startTs = now - timeWindowSeconds * 1000; // Only get data from last X seconds
+    if (!keys || !keys.length) {
+      this.log.warn(
+        `Skipping live telemetry fetch for ${deviceId}: empty keys`,
+      );
+      return {};
+    }
 
+    const now = Date.now();
+    const startTs = now - timeWindowSeconds * 1000;
+
+    // --- 1️⃣ Check device's last activity first ---
+    const attrUrl = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/attributes/SERVER_SCOPE`;
+    const { data: attrs } = await firstValueFrom(
+      this.http.get(attrUrl, { headers: await this.authHeaders() }),
+    );
+
+    // Find the ThingsBoard-provided "lastActivityTime" attribute
+    const lastActivity = Array.isArray(attrs)
+      ? attrs.find((a: any) => a.key === 'lastActivityTime')
+      : null;
+
+    const lastActiveTs = lastActivity ? Number(lastActivity.value) : 0;
+    const isOnlineDevice = !!lastActiveTs && now - lastActiveTs <= 10_000; // <=10 s → online
+
+    if (!isOnlineDevice) {
+      this.log.log(
+        `Device ${deviceId} considered offline (last active ${(
+          (now - lastActiveTs) /
+          1000
+        ).toFixed(1)}s ago) – returning empty telemetry.`,
+      );
+      return {}; // ⛔ do not even query telemetry
+    }
+
+    // --- 2️⃣ Fetch telemetry only for online devices ---
     const url = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/timeseries`;
     const params = {
       keys: keys.join(','),
       startTs: startTs.toString(),
       endTs: now.toString(),
-      limit: '1', // Only get the latest value within time window
+      limit: '1',
       useStrictDataTypes: 'true',
     };
 
@@ -421,25 +515,21 @@ export class TbService {
       this.http.get(url, { params, headers: await this.authHeaders() }),
     );
 
-    // Transform and filter only recent data
     const result: Record<
       string,
       { value: any; timestamp: number; isLive: boolean }
     > = {};
 
     for (const [key, values] of Object.entries<any>(data)) {
-      if (values && values.length > 0) {
-        const latestValue = values[0];
-        const dataAge = now - latestValue.ts; // Age in milliseconds
-
-        // Only include if data is recent (within time window)
-        if (dataAge <= timeWindowSeconds * 1000) {
-          result[key] = {
-            value: this.cast(latestValue.value),
-            timestamp: latestValue.ts,
-            isLive: dataAge <= 10000, // Mark as "live" if less than 10 seconds old
-          };
-        }
+      if (!values || values.length === 0) continue;
+      const latest = values[0];
+      const age = now - latest.ts;
+      if (age <= timeWindowSeconds * 1000) {
+        result[key] = {
+          value: this.cast(latest.value),
+          timestamp: latest.ts,
+          isLive: age <= 10_000,
+        };
       }
     }
 
