@@ -3,10 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { JwtModule } from '@nestjs/jwt';
 import { AppController } from './app.controller';
-import { TbService } from './tb/Tb.Service';
+import { TbService } from './tb/tb.service';
 import { DatabaseModule } from './database/database.module';
-import { AuthModule } from './auth/Auth.Module';
-import { AdminModule } from './admin/Admin.Module';
+import { AuthModule } from './auth/auth.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [

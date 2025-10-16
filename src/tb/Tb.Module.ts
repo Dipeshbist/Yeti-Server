@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
-import { TbService } from './Tb.Service';
+import { TbService } from './tb.service';
 
 @Module({
   imports: [ConfigModule, HttpModule],

@@ -15,7 +15,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { TbService } from './tb/Tb.Service';
+import { TbService } from './tb/tb.service';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { DatabaseService } from './database/database.service';
 

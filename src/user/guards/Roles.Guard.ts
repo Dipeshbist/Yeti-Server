@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ROLES_KEY } from '../Roles.Decorator';
+import { ROLES_KEY } from '../roles.decorator';
 
 @Injectable()
 export class RolesGuard implements CanActivate {

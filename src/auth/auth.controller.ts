@@ -12,7 +12,7 @@ import {
 import { LoginDto } from './login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RegisterDto } from './dto/register.dto';
-import { AuthService } from './Auth.Service';
+import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class AuthController {

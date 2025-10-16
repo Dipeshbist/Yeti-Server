@@ -12,7 +12,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './login.dto';
 import * as bcrypt from 'bcrypt';
 import { DatabaseService } from '../database/database.service';
-import { NotifyMailService } from '../email/NotifyMail.Service';
+import { NotifyMailService } from '../email/notifymail.service';
 
 @Injectable()
 export class AuthService {

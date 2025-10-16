@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AuthController } from './Auth.Controller';
-import { AuthService } from './Auth.Service';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { DatabaseModule } from '../database/database.module';
-import { NotifyMailModule } from '../email/NotifyMail.Module';
+import { NotifyMailModule } from '../email/notifymail.module';
 
 @Module({
   imports: [

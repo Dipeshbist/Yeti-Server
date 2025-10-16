@@ -1,12 +1,12 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { Roles } from '../user/Roles.Decorator';
-import { RolesGuard } from '../user/guards/Roles.Guard';
-import { ApproveUserDto } from './dto/ApproveUser.Dto';
-import { RejectUserDto } from './dto/RejectUser.Dto';
-import { AdminService } from './Admin.Service';
+import { Roles } from '../user/roles.decorator';
+import { RolesGuard } from '../user/guards/roles.guard';
+import { ApproveUserDto } from './dto/approveuser.dto';
+import { RejectUserDto } from './dto/rejectuser.dto';
+import { AdminService } from './admin.service';
 import { Param, Put } from '@nestjs/common';
-import { UpdateUserDto } from './dto/UpdateUser.Dto';
+import { UpdateUserDto } from './dto/updateuser.dto';
 
 @Controller('admin/users')
 @UseGuards(JwtAuthGuard, RolesGuard)

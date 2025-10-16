@@ -4,10 +4,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { NotifyMailService } from '../email/NotifyMail.Service';
-import { ApproveUserDto } from './dto/ApproveUser.Dto';
-import { RejectUserDto } from './dto/RejectUser.Dto';
-import { UpdateUserDto } from './dto/UpdateUser.Dto';
+import { NotifyMailService } from '../email/notifymail.service';
+import { ApproveUserDto } from './dto/approveuser.dto';
+import { RejectUserDto } from './dto/rejectuser.dto';
+import { UpdateUserDto } from './dto/updateuser.dto';
 import { Prisma, UserRole, UserStatus } from '@prisma/client';
 
 @Injectable()

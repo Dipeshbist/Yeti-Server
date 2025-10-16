@@ -1,7 +1,7 @@
 // src/email/NotifyMail.Module.ts
 import { Module } from '@nestjs/common';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { NotifyMailService } from './NotifyMail.Service';
+import { NotifyMailService } from './notifymail.service';
 
 @Module({
   imports: [
