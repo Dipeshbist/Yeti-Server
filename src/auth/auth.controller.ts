@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/require-await */
 import {
   Controller,
   Post,
@@ -44,7 +43,7 @@ export class AuthController {
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
-  async getProfile(
+  getProfile(
     @Request()
     req: {
       user: {
