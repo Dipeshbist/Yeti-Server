@@ -49,7 +49,7 @@ model AuditLog {
   actorId      String?
   targetUserId String?
 
-  // ✅ Match relation names to opposite sides
+  // Match relation names to opposite sides
   actor      User? @relation("AuditActor", fields: [actorId], references: [id])
   targetUser User? @relation("AuditTarget", fields: [targetUserId], references: [id])
 }

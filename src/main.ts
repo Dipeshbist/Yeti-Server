@@ -29,7 +29,7 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT ?? 8000;
-  await app.listen(port, '0.0.0.0'); // Allows access from frontend
+  await app.listen(port, '0.0.0.0');
 
   console.log(`🚀 Backend server is running on: http://0.0.0.0:${port}`);
   console.log(`📡 Accepting CORS from Trusted Domains only`);
