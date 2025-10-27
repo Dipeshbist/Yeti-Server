@@ -116,7 +116,6 @@ export class TbService {
   }
 
   // ---- DEVICE INFO ----
-  // Matches the Swagger you showed: GET /api/device/info/{deviceId}
   async getDeviceInfo(deviceId: string) {
     const url = `${this.base()}/api/device/info/${deviceId}`;
     const { data } = await firstValueFrom(
@@ -146,7 +145,7 @@ export class TbService {
   // Add/replace this
   async getAllDashboards(params: DashboardListParams = {}) {
     const pageSize = params.pageSize ?? 10;
-    const page = params.page ?? 0; // ✅ ensure page is present
+    const page = params.page ?? 0; // ensure page is present
 
     const qs = new URLSearchParams();
     qs.set('pageSize', String(pageSize));
@@ -180,13 +179,6 @@ export class TbService {
 
   // ---- TELEMETRY (latest + time-series) ----
   async getLatestTelemetry(deviceId: string, keys: string[]) {
-    // ✅ Guard
-    // if (!keys || !keys.length) {
-    //   this.log.warn(
-    //     `Skipping latest telemetry fetch for ${deviceId}: empty keys`,
-    //   );
-    //   return {};
-    // }
     const url = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/timeseries?keys=${keys.join(',')}&limit=1&useStrictDataTypes=true`;
     const { data } = await firstValueFrom(
       this.http.get(url, { headers: await this.authHeaders() }),
@@ -209,7 +201,6 @@ export class TbService {
     endTs: number,
     limit = 1000,
   ) {
-    // ✅ Guard
     if (!keys || !keys.length) {
       this.log.warn(`Skipping timeseries fetch for ${deviceId}: empty keys`);
       return {};
@@ -351,14 +342,6 @@ export class TbService {
 
   // Get latest telemetry values
   async getLatestTelemetryValues(deviceId: string, keys: string[]) {
-    // ✅ Guard
-    // if (!keys || !keys.length) {
-    //   this.log.warn(
-    //     `Skipping latest-timeseries-values for ${deviceId}: empty keys`,
-    //   );
-    //   return {};
-    // }
-
     const url = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/timeseries?keys=${keys.join(',')}&useStrictDataTypes=true`;
     const { data } = await firstValueFrom(
       this.http.get(url, { headers: await this.authHeaders() }),
@@ -385,7 +368,6 @@ export class TbService {
     endTs: number,
     limit: number = 1000,
   ) {
-    // ✅ Guard
     if (!keys || !keys.length) {
       this.log.warn(
         `Skipping historical telemetry fetch for ${deviceId}: empty keys`,
@@ -477,7 +459,7 @@ export class TbService {
     const now = Date.now();
     const startTs = now - timeWindowSeconds * 1000;
 
-    // --- 1️⃣ Check device's last activity first ---
+    // Check device's last activity first ---
     const attrUrl = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/attributes/SERVER_SCOPE`;
     const { data: attrs } = await firstValueFrom(
       this.http.get(attrUrl, { headers: await this.authHeaders() }),
@@ -498,10 +480,10 @@ export class TbService {
           1000
         ).toFixed(1)}s ago) – returning empty telemetry.`,
       );
-      return {}; // ⛔ do not even query telemetry
+      return {};
     }
 
-    // --- 2️⃣ Fetch telemetry only for online devices ---
+    // --- Fetch telemetry only for online devices ---
     const url = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/timeseries`;
     const params = {
       keys: keys.join(','),

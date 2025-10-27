@@ -32,34 +32,12 @@ export class AppController {
     return 'Yeti Backend API is running! 🚀';
   }
 
-  // Protected endpoint to get user profile
-  // @Get('auth/profile')
-  // @UseGuards(JwtAuthGuard)
-  // getProfile(@Request() req) {
-  //   return {
-  //     success: true,
-  //     user: req.user,
-  //   };
-  // }
-
-  // @Get('my-dashboards')
-  // @UseGuards(JwtAuthGuard)
-  // async getMyDashboards(@Request() req, @Query('page') page?: string) {
-  //   const customerId = req.user.customerId;
-
-  //   return this.tb.getCustomerDashboards(customerId, {
-  //     page: page ? Number(page) : 0, // Converts "2" to 2, or defaults to 0
-  //     pageSize: 10,
-  //   });
-  // }
-
   @Get('my-dashboards')
   @UseGuards(JwtAuthGuard)
   async getMyDashboards(@Request() req, @Query('page') page?: string) {
     const { role, customerId } = req.user;
 
     if (role === 'admin') {
-      // ✅ ensure both page & pageSize are provided (or rely on service defaults)
       return this.tb.getAllDashboards({
         page: page ? Number(page) : 0,
         pageSize: 10,
@@ -100,7 +78,6 @@ export class AppController {
       where: { id: userId },
     });
 
-    // ✅ If the target is an admin with no customerId -> return tenant dashboards
     if (!user?.customerId) {
       if (user?.role === 'admin') {
         return this.tb.getAllDashboards({ pageSize: 10, page: 0 });
@@ -125,7 +102,6 @@ export class AppController {
       where: { id: userId },
     });
 
-    // ✅ If the target is an admin with no customerId -> return tenant devices
     if (!user?.customerId) {
       if (user?.role === 'admin') {
         return this.tb.getAllDevices({ pageSize: 10, page: 0 });
@@ -161,7 +137,6 @@ export class AppController {
     });
   }
 
-  // GET /devices/info/:id  → matches Swagger /api/device/info/{id}
   @Get('devices/info/:id')
   @UseGuards(JwtAuthGuard)
   async getInfo(@Param('id') id: string, @Request() req) {
@@ -178,7 +153,6 @@ export class AppController {
     return deviceInfo;
   }
 
-  // GET /devices/by-name/:name  → convenience
   @Get('devices/by-name/:name')
   @UseGuards(JwtAuthGuard)
   async byName(@Param('name') name: string, @Request() req) {
@@ -230,7 +204,6 @@ export class AppController {
     @Query('endTs') endTs: string,
     @Query('limit') limit?: string,
   ) {
-    // Verify device ownership
     const deviceInfo = await this.tb.getDeviceInfo(id);
     if (
       req.user.role !== 'admin' &&
@@ -258,7 +231,6 @@ export class AppController {
       .filter(Boolean); // Remove empty strings
     return this.tb.getDevicesByIds(list);
   }
-
   // List dashboards assigned to a customer
   @Get('customers/:customerId/dashboards')
   @UseGuards(JwtAuthGuard)
@@ -318,7 +290,7 @@ export class AppController {
     });
   }
 
-  // Bonus: Get dashboards for a specific device
+  // Get dashboards for a specific device
   @Get('devices/:deviceId/customer-dashboards')
   @UseGuards(JwtAuthGuard)
   async dashboardsForDevice(
@@ -369,13 +341,12 @@ export class AppController {
       return {
         deviceId,
         timestamp: now,
-        telemetry: {}, // ⛔ empty
+        telemetry: {},
         attributes: attrs ?? {},
         keys: [],
         customer: req.user.customerId,
       };
     }
-
     // Build key list (if still online)
     let keyArray: string[] = [];
     if (keys && keys.trim()) {
@@ -452,7 +423,7 @@ export class AppController {
     const endTs = Date.now();
     const startTs = endTs - hoursNum * 60 * 60 * 1000;
 
-    // ✅ Guard: if no keys, don't call TB (prevents 500 from ?keys=)
+    // Guard: if no keys, don't call TB (prevents 500 from ?keys=)
     if (!keyArray.length) {
       return {
         deviceId,
@@ -595,7 +566,7 @@ export class AppController {
       }
     }
 
-    // ✅ If still empty, DO NOT call TB; return an empty result
+    // If still empty, DO NOT call TB; return an empty result
     if (!keyArray.length) {
       return {
         deviceId,

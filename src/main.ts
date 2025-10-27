@@ -11,7 +11,6 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    // origin: true, // Allow all origins - DEVELOPMENT ONLY
     origin: [
       'http://localhost:5143',
       'https://www.garud.cloud',
