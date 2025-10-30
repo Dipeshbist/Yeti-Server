@@ -53,6 +53,21 @@ export class AppController {
     });
   }
 
+  // @Get('my-devices')
+  // @UseGuards(JwtAuthGuard)
+  // async getMyDevices(@Request() req) {
+  //   if (!req.user || !req.user.customerId) {
+  //     throw new UnauthorizedException('Invalid user context');
+  //   }
+
+  //   const customerId = req.user.customerId;
+
+  //   return this.tb.getCustomerDeviceInfos(customerId, {
+  //     page: 0,
+  //     pageSize: 10,
+  //   });
+  // }
+
   @Get('my-devices')
   @UseGuards(JwtAuthGuard)
   async getMyDevices(@Request() req) {
@@ -62,10 +77,30 @@ export class AppController {
 
     const customerId = req.user.customerId;
 
-    return this.tb.getCustomerDeviceInfos(customerId, {
+    // 1️⃣ Fetch devices from ThingsBoard
+    const tbDevices = await this.tb.getCustomerDeviceInfos(customerId, {
       page: 0,
       pageSize: 10,
     });
+
+    // 2️⃣ Fetch all renamed devices from your DB
+    const localDevices = await this.dbService.device.findMany({
+      where: { customerId },
+      select: { id: true, name: true },
+    });
+
+    // 3️⃣ Create a quick lookup map
+    const renameMap = Object.fromEntries(
+      localDevices.map((d) => [d.id, d.name]),
+    );
+
+    // 4️⃣ Merge renamed names into the TB devices
+    const mergedDevices = tbDevices.data.map((tbDev: any) => ({
+      ...tbDev,
+      name: renameMap[tbDev.id.id] || tbDev.name, // ✅ Use renamed if exists
+    }));
+
+    return { success: true, data: mergedDevices };
   }
 
   @Get('admin/users/:userId/dashboards')
@@ -137,21 +172,21 @@ export class AppController {
     });
   }
 
-  @Get('devices/info/:id')
-  @UseGuards(JwtAuthGuard)
-  async getInfo(@Param('id') id: string, @Request() req) {
-    const deviceInfo = await this.tb.getDeviceInfo(id);
+  // @Get('devices/info/:id')
+  // @UseGuards(JwtAuthGuard)
+  // async getInfo(@Param('id') id: string, @Request() req) {
+  //   const deviceInfo = await this.tb.getDeviceInfo(id);
 
-    // Validate device belongs to user's customer
-    if (
-      req.user.role !== 'admin' &&
-      deviceInfo.customerId?.id !== req.user.customerId
-    ) {
-      throw new UnauthorizedException('Access denied to this device');
-    }
+  //   // Validate device belongs to user's customer
+  //   if (
+  //     req.user.role !== 'admin' &&
+  //     deviceInfo.customerId?.id !== req.user.customerId
+  //   ) {
+  //     throw new UnauthorizedException('Access denied to this device');
+  //   }
 
-    return deviceInfo;
-  }
+  //   return deviceInfo;
+  // }
 
   @Get('devices/by-name/:name')
   @UseGuards(JwtAuthGuard)
@@ -383,6 +418,8 @@ export class AppController {
     @Query('keys') keys?: string,
     @Query('hours') hours: string = '24',
     @Query('limit') limit: string = '1000',
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
     @Request() req?,
   ) {
     // Verify device ownership (admins bypass)
@@ -420,8 +457,18 @@ export class AppController {
     const hoursNum = Number.isFinite(parseInt(hours)) ? parseInt(hours) : 24;
     const limitNum = Number.isFinite(parseInt(limit)) ? parseInt(limit) : 1000;
 
-    const endTs = Date.now();
-    const startTs = endTs - hoursNum * 60 * 60 * 1000;
+    let startTs: number;
+    let endTs: number;
+
+    // ✅ Use date range if provided
+    if (startDate && endDate) {
+      startTs = new Date(startDate).getTime();
+      endTs = new Date(endDate).getTime();
+    } else {
+      // fallback to hours-based logic
+      endTs = Date.now();
+      startTs = endTs - hoursNum * 60 * 60 * 1000;
+    }
 
     // Guard: if no keys, don't call TB (prevents 500 from ?keys=)
     if (!keyArray.length) {
@@ -586,15 +633,16 @@ export class AppController {
       maxAgeSeconds,
     );
 
-    return {
-      deviceId,
-      data: liveTelemetry,
-      timestamp: Date.now(),
-      maxAgeSeconds,
-      dataCount: Object.keys(liveTelemetry).length,
-      keys: keyArray,
-      isLive: Object.values(liveTelemetry).some((item) => item.isLive),
-    };
+    return liveTelemetry;
+    // return {
+    //   deviceId,
+    //   data: liveTelemetry,
+    //   timestamp: Date.now(),
+    //   maxAgeSeconds,
+    //   dataCount: Object.keys(liveTelemetry).length,
+    //   keys: keyArray,
+    //   isLive: Object.values(liveTelemetry).some((item) => item.isLive),
+    // };
   }
 
   @Get('devices/:deviceId/attributes/:scope')

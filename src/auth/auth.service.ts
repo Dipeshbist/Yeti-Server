@@ -23,15 +23,27 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const existing = await this.db.user.findUnique({
-      where: { email: dto.email },
+    // Check for duplicate email or phone
+    const existingUser = await this.db.user.findFirst({
+      where: {
+        OR: [{ email: dto.email }, { phone: dto.phone }],
+      },
     });
-    if (existing) throw new BadRequestException('Email already registered');
+
+    if (existingUser) {
+      throw new BadRequestException(
+        existingUser.email === dto.email
+          ? 'Email already registered'
+          : 'Phone number already registered',
+      );
+    }
 
     const hashed = await bcrypt.hash(dto.password, 10);
+
     const user = await this.db.user.create({
       data: {
         email: dto.email,
+        phone: dto.phone, // ✅ new field
         password: hashed,
         firstName: dto.firstName ?? null,
         lastName: dto.lastName ?? null,
@@ -41,7 +53,7 @@ export class AuthService {
         auditLogsCreated: {
           create: {
             action: 'USER_REGISTERED',
-            details: `email=${dto.email}`,
+            details: `email=${dto.email}, phone=${dto.phone}`,
           },
         },
       },
@@ -52,6 +64,7 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName ?? undefined,
       lastName: user.lastName ?? undefined,
+      phone: user.phone ?? undefined,
       createdAt: user.createdAt,
     });
 
@@ -60,6 +73,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+        phone: user.phone,
         status: user.status,
         role: user.role,
       },
@@ -102,6 +116,8 @@ export class AuthService {
         email: user.email,
         role: user.role,
         customerId: user.customerId,
+        firstName: user.firstName,
+        lastName: user.lastName,
       },
     };
   }
@@ -109,5 +125,49 @@ export class AuthService {
   async logout() {
     // No refresh token is used; frontend clears access token
     return { message: 'Logged out successfully' };
+  }
+
+  async updateProfileImage(
+    userId: string,
+    imageUrl: string,
+    cloudinaryId: string,
+  ) {
+    return this.db.user.update({
+      where: { id: userId },
+      data: {
+        profileImage: imageUrl,
+        cloudinaryId: cloudinaryId,
+      },
+    });
+  }
+
+  async getUserById(userId: string) {
+    const user = await this.db.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        customerId: true,
+        profileImage: true, // ✅ include avatar field
+        cloudinaryId: true, // optional if you store this
+      },
+    });
+
+    if (!user) throw new Error('User not found');
+
+    return user;
+  }
+
+  async removeProfileImage(userId: string) {
+    return this.db.user.update({
+      where: { id: userId },
+      data: {
+        profileImage: null,
+        cloudinaryId: null,
+      },
+    });
   }
 }

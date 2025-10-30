@@ -71,7 +71,14 @@ export class AdminService {
       },
     });
 
-    await this.notify.notifyUserApproved(updated.email);
+    await this.notify.notifyUserApproved({
+      email: updated.email,
+      firstName: updated.firstName ?? undefined,
+      lastName: updated.lastName ?? undefined,
+      loginUrl: 'https://www.garud.cloud/', // ✅ your real login page
+      supportEmail: 'support@garud.cloud', // ✅ your support contact
+    });
+
     return { success: true };
   }
 
@@ -95,7 +102,14 @@ export class AdminService {
       },
     });
 
-    await this.notify.notifyUserRejected(user.email, dto.reason);
+    await this.notify.notifyUserRejected({
+      email: user.email,
+      firstName: user.firstName ?? undefined,
+      lastName: user.lastName ?? undefined,
+      reason: dto.reason,
+      supportEmail: 'support@garud.cloud',
+    });
+
     return { success: true };
   }
 
@@ -133,7 +147,14 @@ export class AdminService {
       user.status === UserStatus.PENDING &&
       updated.status === UserStatus.VERIFIED
     ) {
-      await this.notify.notifyUserApproved(updated.email);
+      await this.notify.notifyUserApproved({
+        email: updated.email,
+        firstName: updated.firstName ?? undefined,
+        lastName: updated.lastName ?? undefined,
+        loginUrl: 'https://www.garud.cloud/', // ✅ your real login page
+        supportEmail: 'support@garud.cloud', // ✅ your support contact
+      });
+
       await this.db.auditLog.create({
         data: {
           action: 'USER_APPROVED',

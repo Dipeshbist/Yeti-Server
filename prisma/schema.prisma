@@ -22,8 +22,11 @@ model User {
   id        String  @id @default(uuid())
   email     String  @unique
   password  String
+  phone     String?  @unique 
   firstName String?
   lastName  String?
+  profileImage String?
+  cloudinaryId   String?
   isActive  Boolean @default(true)
 
   role         UserRole   @default(user)
@@ -53,3 +56,14 @@ model AuditLog {
   actor      User? @relation("AuditActor", fields: [actorId], references: [id])
   targetUser User? @relation("AuditTarget", fields: [targetUserId], references: [id])
 }
+
+model Device {
+  id          String   @id @default(uuid())
+  name        String
+  tbOriginalName  String? 
+  customerId  String?
+  location    String?     // human-readable location name
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+

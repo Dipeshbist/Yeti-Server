@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
@@ -444,77 +445,170 @@ export class TbService {
   }
 
   // Get only recent telemetry (within specified timeframe)
+  // async getLiveTelemetryValues(
+  //   deviceId: string,
+  //   keys: string[],
+  //   timeWindowSeconds: number = 30,
+  // ) {
+  //   if (!keys || !keys.length) {
+  //     this.log.warn(
+  //       `Skipping live telemetry fetch for ${deviceId}: empty keys`,
+  //     );
+  //     return {};
+  //   }
+
+  //   const now = Date.now();
+  //   const startTs = now - timeWindowSeconds * 1000;
+
+  //   // Check device's last activity first ---
+  //   const attrUrl = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/attributes/SERVER_SCOPE`;
+  //   const { data: attrs } = await firstValueFrom(
+  //     this.http.get(attrUrl, { headers: await this.authHeaders() }),
+  //   );
+
+  //   // Find the ThingsBoard-provided "lastActivityTime" attribute
+  //   const lastActivity = Array.isArray(attrs)
+  //     ? attrs.find((a: any) => a.key === 'lastActivityTime')
+  //     : null;
+
+  //   const lastActiveTs = lastActivity ? Number(lastActivity.value) : 0;
+  //   const isOnlineDevice = !!lastActiveTs && now - lastActiveTs <= 10_000; // <=10 s → online
+
+  //   if (!isOnlineDevice) {
+  //     this.log.log(
+  //       `Device ${deviceId} considered offline (last active ${(
+  //         (now - lastActiveTs) /
+  //         1000
+  //       ).toFixed(1)}s ago) – returning empty telemetry.`,
+  //     );
+  //     return {};
+  //   }
+
+  //   // --- Fetch telemetry only for online devices ---
+  //   const url = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/timeseries`;
+  //   const params = {
+  //     keys: keys.join(','),
+  //     startTs: startTs.toString(),
+  //     endTs: now.toString(),
+  //     limit: '1',
+  //     useStrictDataTypes: 'true',
+  //   };
+
+  //   const { data } = await firstValueFrom(
+  //     this.http.get(url, { params, headers: await this.authHeaders() }),
+  //   );
+
+  //   const result: Record<
+  //     string,
+  //     { value: any; timestamp: number; isLive: boolean }
+  //   > = {};
+
+  //   for (const [key, values] of Object.entries<any>(data)) {
+  //     if (!values || values.length === 0) continue;
+  //     const latest = values[0];
+  //     const age = now - latest.ts;
+  //     if (age <= timeWindowSeconds * 1000) {
+  //       result[key] = {
+  //         value: this.cast(latest.value),
+  //         timestamp: latest.ts,
+  //         isLive: age <= 10_000,
+  //       };
+  //     }
+  //   }
+
+  //   return result;
+  // }
+
+  // Get structured live telemetry grouped by sid and mb_attr
   async getLiveTelemetryValues(
     deviceId: string,
     keys: string[],
-    timeWindowSeconds: number = 30,
+    timeWindowSeconds: number = 60,
   ) {
-    if (!keys || !keys.length) {
-      this.log.warn(
-        `Skipping live telemetry fetch for ${deviceId}: empty keys`,
-      );
-      return {};
-    }
-
     const now = Date.now();
     const startTs = now - timeWindowSeconds * 1000;
 
-    // Check device's last activity first ---
-    const attrUrl = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/attributes/SERVER_SCOPE`;
-    const { data: attrs } = await firstValueFrom(
-      this.http.get(attrUrl, { headers: await this.authHeaders() }),
+    // ---- 1️⃣ Fetch mb_attr from SERVER_SCOPE ----
+    const mbAttrUrl = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/attributes/SERVER_SCOPE?keys=mb_attr`;
+    const { data: mbAttrData } = await firstValueFrom(
+      this.http.get(mbAttrUrl, { headers: await this.authHeaders() }),
     );
 
-    // Find the ThingsBoard-provided "lastActivityTime" attribute
-    const lastActivity = Array.isArray(attrs)
-      ? attrs.find((a: any) => a.key === 'lastActivityTime')
-      : null;
-
-    const lastActiveTs = lastActivity ? Number(lastActivity.value) : 0;
-    const isOnlineDevice = !!lastActiveTs && now - lastActiveTs <= 10_000; // <=10 s → online
-
-    if (!isOnlineDevice) {
-      this.log.log(
-        `Device ${deviceId} considered offline (last active ${(
-          (now - lastActiveTs) /
-          1000
-        ).toFixed(1)}s ago) – returning empty telemetry.`,
-      );
-      return {};
-    }
-
-    // --- Fetch telemetry only for online devices ---
-    const url = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/timeseries`;
-    const params = {
-      keys: keys.join(','),
-      startTs: startTs.toString(),
-      endTs: now.toString(),
-      limit: '1',
-      useStrictDataTypes: 'true',
-    };
-
-    const { data } = await firstValueFrom(
-      this.http.get(url, { params, headers: await this.authHeaders() }),
-    );
-
-    const result: Record<
-      string,
-      { value: any; timestamp: number; isLive: boolean }
-    > = {};
-
-    for (const [key, values] of Object.entries<any>(data)) {
-      if (!values || values.length === 0) continue;
-      const latest = values[0];
-      const age = now - latest.ts;
-      if (age <= timeWindowSeconds * 1000) {
-        result[key] = {
-          value: this.cast(latest.value),
-          timestamp: latest.ts,
-          isLive: age <= 10_000,
-        };
+    // mb_attr will look like [{ key: 'mb_attr', value: [...] }]
+    let mbAttr = Array.isArray(mbAttrData)
+      ? mbAttrData.find((a: any) => a.key === 'mb_attr')?.value
+      : mbAttrData?.value;
+    if (typeof mbAttr === 'string') {
+      try {
+        mbAttr = JSON.parse(mbAttr);
+      } catch {
+        mbAttr = [];
       }
     }
 
-    return result;
+    // Build sid → name map
+    const sidMap: Record<string, string> = {};
+    if (Array.isArray(mbAttr)) {
+      for (const item of mbAttr) {
+        if (item?.sid != null && item?.name) {
+          sidMap[`s${item.sid}`] = item.name;
+        }
+      }
+    }
+
+    // ---- 2️⃣ Fetch latest telemetry ----
+    const keysUrl = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/timeseries?useStrictDataTypes=true`;
+    const { data } = await firstValueFrom(
+      this.http.get(keysUrl, { headers: await this.authHeaders() }),
+    );
+
+    // ---- 3️⃣ Normalize and group by sid ----
+    const groups: Record<
+      string,
+      Record<string, { value: any; unit?: string; ts: number }>
+    > = {};
+
+    for (const [key, values] of Object.entries<any>(data)) {
+      if (!Array.isArray(values) || values.length === 0) continue;
+      const latest = values[0];
+      const value = this.cast(latest.value);
+      const ts = latest.ts;
+
+      // Find prefix (e.g., s1/, s2/)
+      const prefixMatch = key.match(/^(s\d+)\//);
+      const prefix = prefixMatch ? prefixMatch[1] : 'internal';
+      const groupName =
+        prefix === 'internal'
+          ? 'Internal Data'
+          : sidMap[prefix] || `System ${prefix.toUpperCase()}`;
+
+      if (!groups[groupName]) groups[groupName] = {};
+
+      // Optional: find the unit from mb_attr if available
+      let unit = '';
+      if (Array.isArray(mbAttr)) {
+        const match = mbAttr.find((m: any) => `s${m.sid}` === prefix);
+        const param = match?.data?.find((d: any) => key.includes(d.name));
+        unit = param?.unit || '';
+      }
+
+      groups[groupName][key] = { value, unit, ts };
+    }
+
+    return {
+      deviceId,
+      timestamp: now,
+      groups,
+      totalGroups: Object.keys(groups).length,
+      totalKeys: Object.values(groups).reduce(
+        (sum, g) => sum + Object.keys(g).length,
+        0,
+      ),
+      dataCount: Object.values(groups).reduce(
+        (sum, g) => sum + Object.keys(g).length,
+        0,
+      ),
+      isLive: Object.keys(groups).length > 0,
+    };
   }
 }
