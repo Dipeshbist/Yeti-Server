@@ -97,7 +97,7 @@ export class NotifyMailService {
         html,
       });
     } catch (err) {
-      console.error('❌ Failed to send new registration email:', err);
+      console.error(' Failed to send new registration email:', err);
     }
   }
 
@@ -145,7 +145,7 @@ export class NotifyMailService {
     });
   }
 
-  /** ❌ 3. Notify user when rejected */
+  /** 3. Notify user when rejected */
   async notifyUserRejected(params: {
     email: string;
     firstName?: string;
