@@ -54,7 +54,13 @@ export class AdminThingsboardController {
   // ❌ Delete device
   @Delete('devices/:deviceId')
   async deleteDevice(@Param('deviceId') deviceId: string) {
-    return this.tb.deleteDevice(deviceId);
+    // return this.tb.deleteDevice(deviceId);
+    try {
+      await this.tb.deleteDevice(deviceId); // Call the service to delete the device
+      return { success: true }; // Send a valid response indicating success
+    } catch (error) {
+      throw new Error('Error deleting device', error); // In case of an error, throw an error with a message
+    }
   }
 
   // 📋 List tenant devices
@@ -89,7 +95,13 @@ export class AdminThingsboardController {
   // ❌ Delete customer
   @Delete('customers/:customerId')
   async deleteCustomer(@Param('customerId') customerId: string) {
-    return this.tb.deleteCustomer(customerId);
+    // return this.tb.deleteCustomer(customerId);
+    try {
+      await this.tb.deleteCustomer(customerId); // Call the service to delete the device
+      return { success: true }; // Send a valid response indicating success
+    } catch (error) {
+      throw new Error('Error deleting device', error); // In case of an error, throw an error with a message
+    }
   }
 
   @Get('device-profiles')
