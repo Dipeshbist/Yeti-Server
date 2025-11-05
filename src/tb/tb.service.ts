@@ -629,4 +629,122 @@ export class TbService {
       isLive,
     };
   }
+
+  async createCustomer(body: any) {
+    const url = `${this.base()}/api/customer`;
+    const { data } = await firstValueFrom(
+      this.http.post(url, body, { headers: await this.authHeaders() }),
+    );
+    return data;
+  }
+
+  async createDevice(body: any) {
+    const url = `${this.base()}/api/device`;
+    const { data } = await firstValueFrom(
+      this.http.post(url, body, { headers: await this.authHeaders() }),
+    );
+    return data;
+  }
+
+  async assignDeviceToCustomer(customerId: string, deviceId: string) {
+    const url = `${this.base()}/api/customer/${customerId}/device/${deviceId}`;
+    const { data } = await firstValueFrom(
+      this.http.post(url, {}, { headers: await this.authHeaders() }),
+    );
+    return data;
+  }
+
+  async unassignDeviceFromCustomer(deviceId: string) {
+    const url = `${this.base()}/api/customer/device/${deviceId}`;
+    const { data } = await firstValueFrom(
+      this.http.delete(url, { headers: await this.authHeaders() }),
+    );
+    return data;
+  }
+
+  async deleteDevice(deviceId: string) {
+    const url = `${this.base()}/api/device/${deviceId}`;
+    const { data } = await firstValueFrom(
+      this.http.delete(url, { headers: await this.authHeaders() }),
+    );
+    return data;
+  }
+
+  async getAllCustomers() {
+    const url = `${this.base()}/api/customers?pageSize=100&page=0`;
+    const { data } = await firstValueFrom(
+      this.http.get(url, { headers: await this.authHeaders() }),
+    );
+    return data;
+  }
+
+  async deleteCustomer(customerId: string) {
+    const url = `${this.base()}/api/customer/${customerId}`;
+    const { data } = await firstValueFrom(
+      this.http.delete(url, { headers: await this.authHeaders() }),
+    );
+    return data;
+  }
+
+  async getAllDeviceProfiles() {
+    const url = `${this.base()}/api/deviceProfiles?pageSize=100&page=0`;
+    try {
+      const { data } = await firstValueFrom(
+        this.http.get(url, { headers: await this.authHeaders() }),
+      );
+      return data?.data || data; // ThingsBoard returns { data: [profiles], totalPages... }
+    } catch (err: any) {
+      console.error(
+        '❌ Failed to fetch device profiles:',
+        err.response?.data || err.message,
+      );
+      throw err;
+    }
+  }
+
+  // Fetch devices assigned to a specific customer
+  // async getDevicesForCustomer(customerId: string) {
+  //   const url = `${this.base()}/api/customer/${customerId}/deviceInfos`;
+  //   try {
+  //     const { data } = await firstValueFrom(
+  //       this.http.get(url, { headers: await this.authHeaders() }),
+  //     );
+  //     return data; // Return the devices data
+  //   } catch (err) {
+  //     this.log.error('Error fetching devices:', err);
+  //     throw new Error('Error fetching devices');
+  //   }
+  // }
+
+  async getDevicesForCustomer(
+    customerId: string,
+    q: DeviceInfoQuery = {},
+  ): Promise<PageData<DeviceInfo>> {
+    const p = new URLSearchParams();
+    p.set('pageSize', String(q.pageSize ?? 100)); // Increased default to get more devices
+    p.set('page', String(q.page ?? 0));
+    if (q.type) p.set('type', q.type);
+    if (q.deviceProfileId) p.set('deviceProfileId', q.deviceProfileId);
+    if (typeof q.active === 'boolean') p.set('active', String(q.active));
+    if (q.textSearch) p.set('textSearch', q.textSearch);
+    if (q.sortProperty) p.set('sortProperty', q.sortProperty);
+    if (q.sortOrder) p.set('sortOrder', q.sortOrder);
+
+    // Use deviceInfos endpoint for richer data
+    const url = `${this.base()}/api/customer/${customerId}/deviceInfos?${p.toString()}`;
+
+    this.log.debug(`Fetching devices for customer ${customerId}: ${url}`);
+
+    const { data } = await firstValueFrom(
+      this.http.get<PageData<DeviceInfo>>(url, {
+        headers: await this.authHeaders(),
+      }),
+    );
+
+    this.log.debug(
+      `Found ${data.data?.length || 0} devices for customer ${customerId}`,
+    );
+
+    return data;
+  }
 }

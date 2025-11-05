@@ -23,24 +23,26 @@ export class DeviceController {
     private readonly tb: TbService,
   ) {}
 
-  // ✅ 1️⃣ Save user-entered location (auto-fills name & customerId)
-  @UseGuards(JwtAuthGuard)
   @Post(':deviceId/location')
+  @UseGuards(JwtAuthGuard)
   async saveLocation(
     @Param('deviceId') deviceId: string,
-    @Body('location') location: string,
+    @Body() body: { location: string; lat?: number; lng?: number },
     @Req() req,
   ) {
-    if (!location || !location.trim()) {
-      throw new BadRequestException('Location cannot be empty');
+    const { location, lat, lng } = body || {};
+    if (
+      !location?.trim() ||
+      typeof lat !== 'number' ||
+      typeof lng !== 'number'
+    ) {
+      throw new BadRequestException('location, lat and lng are required');
     }
 
-    // 🧭 fetch device info from ThingsBoard (only for name + customerId)
     const deviceInfo = await this.tb.getDeviceInfo(deviceId);
     if (!deviceInfo)
       throw new BadRequestException('Device not found in ThingsBoard');
 
-    // ✅ Verify user owns this device
     if (
       req.user.role !== 'admin' &&
       deviceInfo.customerId?.id !== req.user.customerId
@@ -48,29 +50,31 @@ export class DeviceController {
       throw new UnauthorizedException('Access denied to this device');
     }
 
-    // ✅ Extract just the metadata
     const name = deviceInfo.name ?? 'Unnamed Device';
     const customerId = deviceInfo.customerId?.id ?? null;
 
-    // ✅ Create or update (only location comes from user)
     const record = await this.db.device.upsert({
       where: { id: deviceId },
-      update: { location },
-      create: { id: deviceId, name, customerId, location },
+      update: { location, lat, lng },
+      create: { id: deviceId, name, customerId, location, lat, lng },
     });
 
     return { success: true, message: 'Location saved', device: record };
   }
 
-  // ✅ 2️⃣ Fetch saved location
-  @UseGuards(JwtAuthGuard)
   @Get(':deviceId/location')
+  @UseGuards(JwtAuthGuard)
   async getLocation(@Param('deviceId') deviceId: string) {
     const device = await this.db.device.findUnique({
       where: { id: deviceId },
-      select: { id: true, location: true },
+      select: { id: true, location: true, lat: true, lng: true },
     });
-    return { success: true, location: device?.location ?? null };
+    return {
+      success: true,
+      location: device?.location ?? null,
+      lat: device?.lat ?? null,
+      lng: device?.lng ?? null,
+    };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -118,30 +122,6 @@ export class DeviceController {
       device: record,
     };
   }
-
-  // @UseGuards(JwtAuthGuard)
-  // @Get(':deviceId/info')
-  // async getMergedDeviceInfo(@Param('deviceId') deviceId: string) {
-  //   const tbDevice = await this.tb.getDeviceInfo(deviceId);
-  //   if (!tbDevice)
-  //     throw new BadRequestException('Device not found in ThingsBoard');
-
-  //   const local = await this.db.device.findUnique({ where: { id: deviceId } });
-
-  //   return {
-  //     success: true,
-  //     device: {
-  //       id: deviceId,
-  //       name: local?.name || tbDevice.name, // ✅ show renamed if available
-  //       tbName: tbDevice.name,
-  //       location: local?.location ?? null,
-  //       customerId: tbDevice.customerId?.id,
-  //       createdAt: tbDevice.createdTime,
-  //       type: tbDevice.type,
-  //       deviceProfileName: tbDevice.deviceProfileName,
-  //     },
-  //   };
-  // }
 
   @UseGuards(JwtAuthGuard)
   @Get(':deviceId/info')

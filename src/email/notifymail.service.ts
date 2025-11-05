@@ -8,8 +8,7 @@ export class NotifyMailService {
   /** Common reusable Yeti email template */
   private renderTemplate(title: string, bodyHtml: string) {
     const year = new Date().getFullYear();
-    // const logoUrl = 'https://www.garud.cloud/assets/yeti-logo.png';
-    const headerColor = '#0a0f1a'; // dark header background
+    const headerColor = '#0a0f1a';
 
     return `
       <div style="background:#f6f7f9;padding:24px 12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111827;">
@@ -39,7 +38,7 @@ export class NotifyMailService {
       </div>`;
   }
 
-  /** ✅ Get admin list from ENV */
+  /** Get admin list from ENV */
   private adminList(): string[] {
     const admins = (process.env.ADMIN_EMAILS ?? '')
       .split(',')
@@ -48,7 +47,7 @@ export class NotifyMailService {
     return admins;
   }
 
-  /** 📩 1. Notify admins on new registration */
+  /** 1. Notify admins on new registration */
   async notifyAdminsNewRegistration(payload: {
     userId: string;
     email: string;

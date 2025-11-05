@@ -58,12 +58,23 @@ model AuditLog {
 }
 
 model Device {
-  id          String   @id @default(uuid())
-  name        String
-  tbOriginalName  String? 
-  customerId  String?
-  location    String?     // human-readable location name
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(uuid())
+  name           String
+  tbOriginalName String?
+  customerId     String?
+
+  // Human label user sees (e.g., “Pokhara Office”)
+  location       String?
+
+  // NEW — precise coordinates captured from the map
+  lat            Float?   @db.DoublePrecision
+  lng            Float?   @db.DoublePrecision
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Helpful indexes
+  @@index([lat, lng])
+  @@index([location])
 }
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
@@ -12,7 +13,7 @@ export class TemperatureAlertRealtimeService implements OnModuleInit {
   private readonly log = new Logger(TemperatureAlertRealtimeService.name);
   private readonly THRESHOLD = 80;
   private readonly subscribedDevices: Set<string> = new Set();
-y
+
   constructor(
     private readonly tb: TbService,
     private readonly mailer: NotifyMailService,
@@ -52,19 +53,34 @@ y
                   `🔥 ${dev.name}: ${temperature.toFixed(1)}°C exceeded threshold`,
                 );
 
-                // Find users linked to this device’s customerId
                 const customerId = dev.customerId?.id;
                 if (!customerId) return;
 
+                // ✅ STEP 1: Find the correct device name from your Prisma DB
+                const dbDevice = await this.db.device.findFirst({
+                  where: {
+                    OR: [
+                      { tbOriginalName: dev.name }, // fallback if you haven’t added tbDeviceId
+                      { name: dev.name },
+                    ],
+                  },
+                  select: { name: true },
+                });
+
+                const displayName =
+                  dbDevice?.name || dev.name || 'Unnamed Device';
+
+                // ✅ STEP 2: Find users under this customer
                 const users = await this.db.user.findMany({
                   where: { customerId, status: 'VERIFIED', isActive: true },
                   select: { email: true, firstName: true },
                 });
 
+                // ✅ STEP 3: Send alert email using the database name
                 for (const u of users) {
                   await this.mailer.notifyTemperatureAlert({
                     email: u.email,
-                    deviceName: dev.name,
+                    deviceName: displayName, // <-- now your DB-friendly name
                     measured: temperature,
                     threshold: this.THRESHOLD,
                     when: new Date(ts).toLocaleString(),

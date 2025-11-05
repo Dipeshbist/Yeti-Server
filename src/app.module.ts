@@ -10,6 +10,7 @@ import { AdminModule } from './admin/admin.module';
 import { TemperatureAlertRealtimeService } from './alerts/temperature-alert.service';
 import { NotifyMailModule } from './email/notifymail.module';
 import { DeviceController } from './device/device.controller';
+import { AdminThingsboardController } from './admin/admin-thingsboard.controller';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { DeviceController } from './device/device.controller';
     NotifyMailModule,
     JwtModule.register({}),
   ],
-  controllers: [AppController, DeviceController],
+  controllers: [AppController, DeviceController, AdminThingsboardController],
   providers: [TbService, TemperatureAlertRealtimeService],
 })
 export class AppModule {}

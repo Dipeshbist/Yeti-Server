@@ -172,22 +172,6 @@ export class AppController {
     });
   }
 
-  // @Get('devices/info/:id')
-  // @UseGuards(JwtAuthGuard)
-  // async getInfo(@Param('id') id: string, @Request() req) {
-  //   const deviceInfo = await this.tb.getDeviceInfo(id);
-
-  //   // Validate device belongs to user's customer
-  //   if (
-  //     req.user.role !== 'admin' &&
-  //     deviceInfo.customerId?.id !== req.user.customerId
-  //   ) {
-  //     throw new UnauthorizedException('Access denied to this device');
-  //   }
-
-  //   return deviceInfo;
-  // }
-
   @Get('devices/by-name/:name')
   @UseGuards(JwtAuthGuard)
   async byName(@Param('name') name: string, @Request() req) {
