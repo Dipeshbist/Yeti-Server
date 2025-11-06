@@ -3,12 +3,12 @@ name: Build & Deploy Yeti Backend (Dockerized)
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: # allow manual run
+  workflow_dispatch:
 
 jobs:
   deploy:
     name: Build & Run on Server
-    runs-on: self-hosted   # your Ubuntu runner that has Docker installed
+    runs-on: self-hosted   # Ubuntu runner with Docker installed
 
     steps:
       # 1️⃣ Checkout latest code
@@ -29,7 +29,13 @@ jobs:
             docker rm yeti-backend || true
           fi
 
-      # 4️⃣ Run the new container
+      # 4️⃣ Create .env file dynamically from GitHub Secret
+      - name: Create .env file from GitHub Secret
+        run: |
+          echo "${{ secrets.ENV }}" > .env
+          echo "✅ .env file created with environment variables"
+
+      # 5️⃣ Run the new container using the .env file
       - name: Run updated container
         run: |
           echo "🚀 Starting new container..."
@@ -37,10 +43,10 @@ jobs:
             --name yeti-backend \
             --restart=always \
             -p 8000:8000 \
-            --env-file /root/deployments/yeti-backend/.env \
+            --env-file .env \
             yeti-backend:latest
 
-      # 5️⃣ Health check
+      # 6️⃣ Health check
       - name: Verify deployment
         run: |
           echo "🩺 Checking status..."
