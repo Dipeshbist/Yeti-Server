@@ -1,41 +1,54 @@
-# 1️⃣ Builder stage
+# ===============================
+# 1️⃣ Builder Stage
+# ===============================
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Copy package files and install all dependencies (for build)
 COPY package*.json ./
 RUN npm ci
 
-# Copy the entire source
+# Copy full project source
 COPY . .
 
-# 🔧 Generate Prisma client BEFORE build (fixes missing @prisma/client types)
-RUN npx prisma generate || echo "⚠️ Prisma client not generated"
+# Generate Prisma client before building (ensures correct types)
+RUN npx prisma generate
 
-# Build NestJS application
+# Build NestJS app (outputs to /app/dist)
 RUN npm run build
 
-# 2️⃣ Production stage
+
+# ===============================
+# 2️⃣ Production Stage
+# ===============================
 FROM node:20-alpine AS production
 WORKDIR /app
 
-# Copy package files and install only production dependencies
+# Copy only package files first for dependency installation
 COPY package*.json ./
+
+# Install production dependencies only (no devDeps)
 RUN npm ci --omit=dev && npm cache clean --force
 
-# Copy built app and Prisma schema
-# COPY --from=builder /app/dist ./dist
-# COPY --from=builder /app/prisma ./prisma
-# COPY .env .
-  COPY . . 
+# Copy build artifacts and Prisma schema from builder
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+
+# Optionally copy your .env file (or mount it at runtime)
+COPY .env .env
+
 # Environment variables
 ENV NODE_ENV=production
 ENV PORT=8000
 
+# Expose app port
 EXPOSE 8000
 
-# Prisma client generation (optional, ensures runtime compatibility)
-RUN npx prisma generate || echo "⚠️ Prisma schema not found at runtime"
+# Generate Prisma client (ensures runtime schema compatibility)
+RUN npx prisma generate
 
-# Start the app
-CMD ["node", "dist/src/main.js"]
+# Optional: Verify build before starting (so Docker fails early if dist missing)
+RUN test -f dist/main.js || (echo "❌ Build output not found: dist/main.js" && exit 1)
+
+# Start the NestJS app
+CMD ["node", "dist/main.js"]
