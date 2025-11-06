@@ -8,48 +8,48 @@ on:
 jobs:
   deploy:
     name: Build & Run on Server
-    runs-on: self-hosted   # Ubuntu runner with Docker installed
+    runs-on: self-hosted   # Ubuntu runner with Docker + Compose installed
 
     steps:
       # 1️⃣ Checkout latest code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Build Docker image for Yeti Backend
-      - name: Build Docker image
+      # 2️⃣ Stop and remove any existing stack (if running)
+      - name: Stop existing containers
         run: |
-          docker build -t yeti-backend:latest -f Dockerfile .
+          echo "🧹 Stopping old containers..."
+          docker compose down || true
 
-      # 3️⃣ Stop & remove old container (if running)
-      - name: Stop old container
+      # 3️⃣ Rebuild Docker images (this will rebuild yeti-backend and pull others)
+      - name: Build Docker Compose services
         run: |
-          if [ "$(docker ps -aq -f name=yeti-backend)" ]; then
-            echo "🛑 Stopping old container..."
-            docker stop yeti-backend || true
-            docker rm yeti-backend || true
-          fi
+          echo "🏗️ Building updated Docker images..."
+          docker compose build --no-cache
 
-      # 4️⃣ Create .env file dynamically from GitHub Secret
+      # 4️⃣ Recreate .env file from GitHub Secrets
       - name: Create .env file from GitHub Secret
         run: |
           echo "${{ secrets.ENV }}" > .env
           echo "✅ .env file created with environment variables"
 
-      # 5️⃣ Run the new container using the .env file
-      - name: Run updated container
+      # 5️⃣ Start all services (db, yeti-backend, tb-postgres, thingsboard-ce)
+      - name: Start Docker Compose stack
         run: |
-          echo "🚀 Starting new container..."
-          docker run -d \
-            --name yeti-backend \
-            --restart=always \
-            -p 8000:8000 \
-            --env-file .env \
-            yeti-backend:latest
+          echo "🚀 Starting Docker Compose stack..."
+          docker compose up -d
 
-      # 6️⃣ Health check
+      # 6️⃣ Health check for Yeti Backend
       - name: Verify deployment
         run: |
-          echo "🩺 Checking status..."
+          echo "🩺 Checking Yeti Backend health..."
           docker ps
           sleep 8
-          curl -f http://localhost:8000 || echo "⚠️ Health check failed, but container started"
+          curl -f http://localhost:8000 || echo "⚠️ Backend health check failed, but container started"
+
+      # 7️⃣ Optional cleanup of unused images
+      - name: Cleanup old images
+        if: always()
+        run: |
+          echo "🧹 Cleaning up old Docker images..."
+          docker image prune -f || true
