@@ -26,6 +26,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 # Copy built app and Prisma schema
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
+COPY .env .env
 
 # Environment variables
 ENV NODE_ENV=production
