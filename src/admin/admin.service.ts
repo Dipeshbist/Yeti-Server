@@ -75,8 +75,8 @@ export class AdminService {
       email: updated.email,
       firstName: updated.firstName ?? undefined,
       lastName: updated.lastName ?? undefined,
-      loginUrl: 'https://www.garud.cloud/', // ✅ your real login page
-      supportEmail: 'support@garud.cloud', // ✅ your support contact
+      loginUrl: 'https://www.garud.cloud/', // your real login page
+      supportEmail: 'support@garud.cloud', // your support contact
     });
 
     return { success: true };
@@ -113,7 +113,7 @@ export class AdminService {
     return { success: true };
   }
 
-  /** Update a user (role, customerId, isActive) */
+  /* Update a user (role, customerId, isActive) */
   async updateUser(userId: string, updates: UpdateUserDto) {
     const user = await this.db.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
@@ -151,8 +151,8 @@ export class AdminService {
         email: updated.email,
         firstName: updated.firstName ?? undefined,
         lastName: updated.lastName ?? undefined,
-        loginUrl: 'https://www.garud.cloud/', // ✅ your real login page
-        supportEmail: 'support@garud.cloud', // ✅ your support contact
+        loginUrl: 'https://www.garud.cloud/', // your real login page
+        supportEmail: 'support@garud.cloud', // your support contact
       });
 
       await this.db.auditLog.create({

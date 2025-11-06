@@ -1,86 +1,49 @@
-name: Deploy NestJS App
+name: Build & Deploy Yeti Backend (Dockerized)
 
 on:
   push:
     branches: [ main ]
+  workflow_dispatch: # allow manual run
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    name: Build & Run on Server
+    runs-on: self-hosted   # your Ubuntu runner that has Docker installed
 
     steps:
-    # 1️⃣ Checkout code from GitHub
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # 1️⃣ Checkout latest code
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    # 2️⃣ Setup Node.js environment
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+      # 2️⃣ Build Docker image for Yeti Backend
+      - name: Build Docker image
+        run: |
+          docker build -t yeti-backend:latest -f Dockerfile .
 
-    # 3️⃣ Install dependencies locally (optional precheck)
-    - name: Install dependencies
-      run: npm ci
+      # 3️⃣ Stop & remove old container (if running)
+      - name: Stop old container
+        run: |
+          if [ "$(docker ps -aq -f name=yeti-backend)" ]; then
+            echo "🛑 Stopping old container..."
+            docker stop yeti-backend || true
+            docker rm yeti-backend || true
+          fi
 
-    # 4️⃣ Build application locally (verifies build passes before deployment)
-    - name: Build application
-      run: npm run build
+      # 4️⃣ Run the new container
+      - name: Run updated container
+        run: |
+          echo "🚀 Starting new container..."
+          docker run -d \
+            --name yeti-backend \
+            --restart=always \
+            -p 8000:8000 \
+            --env-file /root/deployments/yeti-backend/.env \
+            yeti-backend:latest
 
-    # 5️⃣ Setup SSH for remote server connection
-    - name: Setup SSH
-      uses: webfactory/ssh-agent@v0.8.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-    # 6️⃣ Add server to known hosts (avoids SSH prompts)
-    - name: Add server to known hosts
-      run: |
-        mkdir -p ~/.ssh
-        ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-        chmod 644 ~/.ssh/known_hosts
-
-    # 7️⃣ Deploy code to your Ubuntu server
-    - name: Deploy to server
-      env:
-        SSH_AUTH_SOCK: ${{ env.SSH_AUTH_SOCK }}
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} << 'EOF'
-          set -e  # stop script if any command fails
-
-          # Navigate to correct folder
-          cd /root/deployments/yeti-backend/Yeti-Server || \
-          git clone https://github.com/Dipeshbist/Yeti-Server.git /root/deployments/yeti-backend/Yeti-Server
-
-          cd /root/deployments/yeti-backend/Yeti-Server
-
-          # Pull latest code
-          echo "📦 Pulling latest code from main..."
-          git fetch origin main
-          git reset --hard origin/main
-
-          # Install dependencies and rebuild
-          echo "⚙️ Installing dependencies..."
-          npm ci
-
-          echo "🏗️ Building application..."
-          npm run build
-
-          # Prisma (optional, safe to skip if not used)
-          npx prisma generate || echo "⚠️ No Prisma found, skipping client generation"
-          npx prisma migrate deploy || echo "⚠️ No pending migrations"
-
-          # Restart using PM2
-          echo "🚀 Restarting PM2 service..."
-          pm2 restart yeti-backend || pm2 start dist/src/main.js --name yeti-backend 
-          pm2 save
-
-          echo "✅ Deployment completed successfully!"
-        EOF
-
-    # 8️⃣ Health check
-    - name: Health Check
-      run: |
-        echo "🩺 Running health check..."
-        sleep 10
-        curl -f http://${{ secrets.SSH_HOST }}:8000 || echo "⚠️ Health check failed, but continuing..."
+      # 5️⃣ Health check
+      - name: Verify deployment
+        run: |
+          echo "🩺 Checking status..."
+          docker ps
+          sleep 8
+          curl -f http://localhost:8000 || echo "⚠️ Health check failed, but container started"
