@@ -2,32 +2,39 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Install only prod deps for smaller build
+# Copy package files and install dependencies
 COPY package*.json ./
 RUN npm ci
 
-# Copy source and build
+# Copy the entire source
 COPY . .
+
+# 🔧 Generate Prisma client BEFORE build (fixes missing @prisma/client types)
+RUN npx prisma generate || echo "⚠️ Prisma client not generated"
+
+# Build NestJS application
 RUN npm run build
 
 # 2️⃣ Production stage
 FROM node:20-alpine AS production
 WORKDIR /app
 
-# Copy only dist, package files, and minimal deps
+# Copy package files and install only production dependencies
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
-# Copy built app from builder
+# Copy built app and Prisma schema
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
+# Environment variables
 ENV NODE_ENV=production
 ENV PORT=8000
 
 EXPOSE 8000
 
-# Prisma client optional
-RUN npx prisma generate || echo "No Prisma schema found"
+# Prisma client generation (optional, ensures runtime compatibility)
+RUN npx prisma generate || echo "⚠️ Prisma schema not found at runtime"
 
+# Start the app
 CMD ["node", "dist/src/main.js"]
