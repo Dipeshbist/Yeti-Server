@@ -21,10 +21,10 @@ jobs:
 
       # 3️⃣ Light cleanup
       - name: Stop existing containers
-        timeout-minutes: 3
+        timeout-minutes: 5
         run: |
           echo "🧹 Cleaning up old containers..."
-          docker compose down --timeout 10 || true
+          docker compose down --timeout 60 || true
           docker volume prune -f || true
           docker image prune -af --filter "until=24h" || true
 
