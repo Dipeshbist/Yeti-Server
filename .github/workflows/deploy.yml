@@ -25,7 +25,6 @@ jobs:
         run: |
           echo "🧹 Cleaning up old containers..."
           docker compose down --timeout 60 || true
-          docker volume prune -f || true
           docker image prune -af --filter "until=24h" || true
 
       # 4️⃣ Rebuild and start stack

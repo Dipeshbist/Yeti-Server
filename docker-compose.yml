@@ -61,7 +61,7 @@ services:
       - "8883:8883"
       - "5683-5688:5683-5688/udp"
     volumes:
-      - /home/ubuntu/yeti/thingsboard/Certificates:/etc/thingsboard/conf
+      - /home/ubuntu/yeti/thingsboard/Certificates:/usr/share/thingsboard/conf
       - tb-data:/data
     environment:
       TB_SERVICE_ID: tb-ce-node
@@ -73,8 +73,8 @@ services:
       MQTT_BIND_PORT: "1883"
       MQTT_SSL_ENABLED: "true"
       MQTT_SSL_CREDENTIALS_TYPE: "PEM"
-      MQTT_SSL_PEM_CERT: "/etc/thingsboard/conf/serverCert.pem"
-      MQTT_SSL_PEM_KEY: "/etc/thingsboard/conf/serverKey.pem"
+      MQTT_SSL_PEM_CERT: "/usr/share/thingsboard/conf/serverCert.pem"
+      MQTT_SSL_PEM_KEY: "/usr/share/thingsboard/conf/serverKey.pem"
       MQTT_SSL_BIND_ADDRESS: "0.0.0.0"
       MQTT_SSL_BIND_PORT: "8883"
       MQTT_SSL_PROTOCOL: "TLSv1.2"
