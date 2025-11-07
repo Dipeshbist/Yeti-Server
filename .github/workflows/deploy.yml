@@ -19,21 +19,19 @@ jobs:
           echo "${{ secrets.ENV }}" > .env
           echo "✅ .env file created with environment variables"
 
-      # 3️⃣ Light cleanup
       - name: Stop existing containers
-        timeout-minutes: 10        # ⏱️ Increased timeout to 10 minutes
+        timeout-minutes: 10
         run: |
           echo "🧹 Cleaning up old containers..."
           docker compose down --timeout 60 || true
-          docker image prune -af --filter "until=24h" || true
 
-      # 4️⃣ Rebuild and start stack
       - name: Build Docker Compose services
         run: |
           echo "🏗️ Building updated Docker images..."
           docker compose build
 
       - name: Start Docker Compose stack
+        working-directory: /home/ubuntu/yeti/yeti-backend
         run: |
           echo "🚀 Starting stack (Yeti + ThingsBoard)..."
           docker compose up -d
@@ -44,12 +42,14 @@ jobs:
           sleep 25
           docker ps
 
-      # Only run ThingsBoard install once
       - name: Initialize ThingsBoard Database
-        if: ${{ github.run_number == 1 }}
         run: |
-          echo "🧩 Running ThingsBoard installation..."
-          docker compose run --rm -e INSTALL_TB=true -e LOAD_DEMO=true thingsboard-ce || echo "⚠️ Skipped (already initialized)"
+          if [ "$(docker volume ls -q -f name=tb-data)" = "" ]; then
+            echo "🧩 Running ThingsBoard installation..."
+            docker compose run --rm -e INSTALL_TB=true -e LOAD_DEMO=true thingsboard-ce
+          else
+            echo "✅ ThingsBoard already initialized; skipping."
+          fi
 
       - name: Verify Deployment
         run: |
