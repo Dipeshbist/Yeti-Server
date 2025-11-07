@@ -15,43 +15,58 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 4️⃣ Recreate .env file from GitHub Secrets
+      # 2️⃣ Create .env file from GitHub Secrets
       - name: Create .env file from GitHub Secret
         run: |
           echo "${{ secrets.ENV }}" > .env
           echo "✅ .env file created with environment variables"
 
-      # 2️⃣ Stop and remove any existing stack (if running)
+      # 3️⃣ Stop & remove old containers + unused volumes
       - name: Stop existing containers
         run: |
-          echo "🧹 Stopping old containers..."
-          docker compose down || true
+          echo "🧹 Cleaning up old containers and volumes..."
+          docker compose down -v || true
+          docker system prune -af || true
 
-      # 3️⃣ Rebuild Docker images (this will rebuild yeti-backend and pull others)
+      # 4️⃣ Rebuild all Docker services (no cache)
       - name: Build Docker Compose services
         run: |
           echo "🏗️ Building updated Docker images..."
           docker compose build --no-cache
 
-      
-
-      # 5️⃣ Start all services (db, yeti-backend, tb-postgres, thingsboard-ce)
+      # 5️⃣ Start all services in detached mode
       - name: Start Docker Compose stack
         run: |
-          echo "🚀 Starting Docker Compose stack..."
+          echo "🚀 Starting full stack (Yeti + ThingsBoard)..."
           docker compose up -d
 
-      # 6️⃣ Health check for Yeti Backend
-      - name: Verify deployment
+      # 6️⃣ Wait for PostgreSQL containers to be ready
+      - name: Wait for PostgreSQL
         run: |
-          echo "🩺 Checking Yeti Backend health..."
+          echo "⏳ Waiting for PostgreSQL databases to initialize..."
+          sleep 25
           docker ps
-          sleep 8
-          curl -f http://localhost:8000 || echo "⚠️ Backend health check failed, but container started"
 
-      # 7️⃣ Optional cleanup of unused images
+      # 7️⃣ Initialize ThingsBoard database (only if not already initialized)
+      - name: Initialize ThingsBoard Database
+        run: |
+          echo "🧩 Running ThingsBoard installation..."
+          docker compose run --rm -e INSTALL_TB=true -e LOAD_DEMO=true thingsboard-ce || echo "⚠️ Initialization skipped or already done"
+
+      # 8️⃣ Verify that services are healthy
+      - name: Verify Deployment
+        run: |
+          echo "🩺 Checking running containers..."
+          docker ps
+          sleep 10
+          echo "🔍 Checking Yeti backend health..."
+          curl -f http://localhost:8000 || echo "⚠️ Backend health check failed, but container is up"
+          echo "🌐 Checking ThingsBoard..."
+          curl -f http://localhost:8080 || echo "⚠️ ThingsBoard UI check failed, verify manually"
+
+      # 9️⃣ Optional cleanup of old images
       - name: Cleanup old images
         if: always()
         run: |
-          echo "🧹 Cleaning up old Docker images..."
+          echo "🧹 Cleaning up unused Docker images..."
           docker image prune -f || true
