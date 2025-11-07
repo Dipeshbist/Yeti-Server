@@ -7,73 +7,58 @@ on:
 
 jobs:
   deploy:
-    name: Build & Run on Server
     runs-on: self-hosted
+    name: Build & Run on Server
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Create .env file from GitHub Secret
+        working-directory: /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server
         run: |
           echo "${{ secrets.ENV }}" > .env
           echo "✅ .env file created with environment variables"
 
-      - name: Verify certificate files exist
-        run: |
-          echo "🔐 Checking certificates..."
-          ls -la /home/ubuntu/yeti/thingsboard/Certificates/ || echo "⚠️ Certificate directory not found!"
-          ls -la /home/ubuntu/yeti/thingsboard/config/ || echo "⚠️ Config directory not found!"
-
       - name: Stop existing containers
-        timeout-minutes: 10
+        working-directory: /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server
         run: |
           echo "🧹 Cleaning up old containers..."
           docker compose down --timeout 60 || true
 
       - name: Build Docker Compose services
+        working-directory: /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server
         run: |
           echo "🏗️ Building updated Docker images..."
           docker compose build
 
       - name: Start Docker Compose stack
+        working-directory: /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server
         run: |
           echo "🚀 Starting stack (Yeti + ThingsBoard)..."
           docker compose up -d
 
-      - name: Wait for services to initialize
+      - name: Wait for PostgreSQL
         run: |
-          echo "⏳ Waiting for services to start..."
-          sleep 30
+          echo "⏳ Waiting for PostgreSQL to initialize..."
+          sleep 25
           docker ps
 
-      - name: Initialize ThingsBoard Database (if needed)
+      - name: Initialize ThingsBoard Database
+        working-directory: /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server
         run: |
-          echo "🧩 Checking if ThingsBoard needs initialization..."
-          # Check if database tables exist
-          if docker compose exec -T tb-postgres psql -U postgres -d thingsboard -c "\dt" 2>/dev/null | grep -q "device"; then
-            echo "✅ ThingsBoard already initialized, skipping..."
-          else
-            echo "🔧 Running ThingsBoard installation..."
+          if [ "$(docker volume ls -q -f name=tb-data)" = "" ]; then
+            echo "🧩 Running ThingsBoard installation..."
             docker compose run --rm -e INSTALL_TB=true -e LOAD_DEMO=true thingsboard-ce
-            sleep 10
-            docker compose restart thingsboard-ce
-            echo "✅ ThingsBoard initialized successfully"
+          else
+            echo "✅ ThingsBoard already initialized; skipping."
           fi
-
-      - name: Check ThingsBoard logs for errors
-        run: |
-          echo "📋 Checking ThingsBoard logs..."
-          docker compose logs --tail=50 thingsboard-ce
 
       - name: Verify Deployment
         run: |
-          echo "🩺 Final health checks..."
+          echo "🩺 Checking containers..."
           docker ps
-          echo ""
           echo "🔍 Checking Yeti backend..."
           curl -f http://localhost:8000 || echo "⚠️ Backend not responding yet"
-          echo ""
           echo "🌐 Checking ThingsBoard..."
-          sleep 10
-          curl -f http://localhost:8080 || echo "⚠️ ThingsBoard UI check failed (may need more time)"
+          curl -f http://localhost:8080 || echo "⚠️ ThingsBoard UI check failed"
