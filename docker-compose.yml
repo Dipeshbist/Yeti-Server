@@ -1,3 +1,4 @@
+# ---------- YETI BACKEND + THINGSBOARD CE ----------
 services:
   # ---------- YETI BACKEND STACK ----------
   yeti-postgres:
@@ -53,32 +54,23 @@ services:
     restart: always
     depends_on:
       - tb-postgres
-    working_dir: /thingsboard
     ports:
-      - "8080:8080"
-      - "7070:7070"
-      - "1883:1883"
-      - "8883:8883"
+      - "8080:8080"             # HTTP UI/API
+      - "7070:7070"             # Edge RPC
+      - "1883:1883"             # MQTT (no SSL)
+      - "8883:8883"             # MQTT over SSL placeholder (still open, unused)
       - "5683-5688:5683-5688/udp"
-    volumes:
-      - /home/ubuntu/yeti/thingsboard/Certificates:/usr/share/thingsboard/conf
-      - tb-data:/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
     environment:
       TB_SERVICE_ID: tb-ce-node
       SPRING_DATASOURCE_URL: jdbc:postgresql://tb-postgres:5432/thingsboard
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
-      TB_INSTALL_DATA_DIR: /data
-      MQTT_ENABLED: "true"
-      MQTT_BIND_PORT: "1883"
-      MQTT_SSL_ENABLED: "true"
-      MQTT_SSL_CREDENTIALS_TYPE: "PEM"
-      MQTT_SSL_PEM_CERT: "/usr/share/thingsboard/conf/serverCert.pem"
-      MQTT_SSL_PEM_KEY: "/usr/share/thingsboard/conf/serverKey.pem"
-      MQTT_SSL_BIND_ADDRESS: "0.0.0.0"
-      MQTT_SSL_BIND_PORT: "8883"
-      MQTT_SSL_PROTOCOL: "TLSv1.2"
-      MQTT_SSL_CLIENT_AUTH: "required"
+      # Default queue service is In-Memory; no MQTT SSL config needed
 
 volumes:
   yeti-pgdata:
