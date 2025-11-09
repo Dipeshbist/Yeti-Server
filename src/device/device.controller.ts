@@ -101,7 +101,7 @@ export class DeviceController {
       throw new UnauthorizedException('Access denied to this device');
     }
 
-    // ✅ Store both TB original and renamed name
+    // Store both TB original and renamed name
     const record = await this.db.device.upsert({
       where: { id: deviceId },
       update: {

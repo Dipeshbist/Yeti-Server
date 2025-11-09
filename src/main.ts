@@ -13,8 +13,8 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:5143',
-      'https://www.garud.cloud',
-      'https://garud.cloud',
+      'https://www.garud.cloud/garud',
+      'https://garud.cloud/garud',
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
