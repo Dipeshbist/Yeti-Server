@@ -65,19 +65,26 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://tb-postgres:5432/thingsboard
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
-      # TB_CONFIG_DIR: /config
-
-      # --- SSL configuration (official ThingsBoard PEM setup) ---
+      
+      # --- MQTT SSL configuration ---
       MQTT_SSL_ENABLED: "true"
       MQTT_SSL_CREDENTIALS_TYPE: "PEM"
-      MQTT_SSL_PEM_CERT: "./config/serverCert.pem"
-      MQTT_SSL_PEM_KEY: "./config/serverKey.pem"
+      MQTT_SSL_PEM_CERT: /config/serverCert.pem
+      MQTT_SSL_PEM_KEY: /config/serverKey.pem
       MQTT_SSL_PEM_KEY_PASSWORD: ""
       MQTT_SSL_BIND_ADDRESS: "0.0.0.0"
-      MQTT_SSL_PORT: "8883"
-
+      MQTT_SSL_BIND_PORT: "8883"
+      MQTT_SSL_PROTOCOL: "TLSv1.2"
+      
     volumes:
-      - /home/ubuntu/yeti/thingsboard/config:/usr/share/thingsboard/conf/thingsboard.conf
+      # Mount the config directory containing certificates
+      - /home/ubuntu/yeti/thingsboard/config:/config
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
 
 # ---------- VOLUMES ----------
 volumes:
