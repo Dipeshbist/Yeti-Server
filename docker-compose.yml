@@ -72,6 +72,7 @@ services:
       # SSL Certificates (ensure these files exist on host)
       - ./thingsboardCertificates/serverCert.pem:/etc/thingsboard/conf/server.pem
       - ./thingsboardCertificates/serverKey.pem:/etc/thingsboard/conf/server_key.pem
+      - ./thingsboard.conf:/etc/thingsboard/conf/thingsboard.conf
 
 volumes:
   tb-postgres-data:
