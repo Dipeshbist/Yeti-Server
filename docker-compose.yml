@@ -65,13 +65,14 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://tb-postgres:5432/thingsboard
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      TB_CONFIG_DIR: /usr/share/thingsboard/conf
     volumes:
       # Persistent data volume for ThingsBoard
       - tb-data:/data
 
       # SSL Certificates (ensure these files exist on host)
-      - ./thingsboardCertificates/server.pem:/etc/thingsboard/conf/server.pem
-      - ./thingsboardCertificates/server_key.pem:/etc/thingsboard/conf/server_key.pem
+      - ./thingsboardCertificates/server.pem:/usr/share/thingsboard/conf/server.pem
+      - ./thingsboardCertificates/server_key.pem:/usr/share/thingsboard/conf/server_key.pem
       - ./thingsboard.conf:/usr/share/thingsboard/conf/thingsboard.conf
 
 volumes:
