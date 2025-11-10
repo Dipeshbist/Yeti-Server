@@ -47,38 +47,40 @@ services:
       - tb-postgres-data:/var/lib/postgresql/data
     ports:
       - "55432:5432"
+
   thingsboard-ce:
-   image: thingsboard/tb-node:4.2.1
-   container_name: thingsboard-ce
-   restart: always
-   depends_on:
-    - tb-postgres
-   ports:
-    - "8080:8080"             # HTTP UI/API
-    - "7070:7070"             # Edge RPC
-    - "1883:1883"             # MQTT (no SSL)
-    - "8883:8883"             # MQTT over SSL
-    - "5683-5688:5683-5688/udp"
-   environment:
-    TB_SERVICE_ID: tb-ce-node
-    SPRING_DATASOURCE_URL: jdbc:postgresql://tb-postgres:5432/thingsboard
-    SPRING_DATASOURCE_USERNAME: postgres
-    SPRING_DATASOURCE_PASSWORD: postgres
+    image: thingsboard/tb-node:4.2.1
+    container_name: thingsboard-ce
+    restart: always
+    depends_on:
+      - tb-postgres
+    ports:
+      - "8080:8080"             # HTTP UI/API
+      - "7070:7070"             # Edge RPC
+      - "1883:1883"             # MQTT (no SSL)
+      - "8883:8883"             # MQTT over SSL
+      - "5683-5688:5683-5688/udp"
+    environment:
+      TB_SERVICE_ID: tb-ce-node
+      SPRING_DATASOURCE_URL: jdbc:postgresql://tb-postgres:5432/thingsboard
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
 
-    # --- SSL configuration (from official docs) ---
-    MQTT_SSL_ENABLED: "true"
-    MQTT_SSL_CREDENTIALS_TYPE: "PEM"
-    MQTT_SSL_PEM_CERT: "/config/server.pem"
-    MQTT_SSL_PEM_KEY: "/config/server_key.pem"
-    MQTT_SSL_PEM_KEY_PASSWORD: ""
-    MQTT_SSL_BIND_ADDRESS: "0.0.0.0"
-    MQTT_SSL_PORT: "8883"
-  volumes:
-    - tb-data:/data
-    - ./thingsboardCertificates/server.pem:/config/server.pem
-    - ./thingsboardCertificates/server_key.pem:/config/server_key.pem
+      # --- SSL configuration (official ThingsBoard PEM setup) ---
+      MQTT_SSL_ENABLED: "true"
+      MQTT_SSL_CREDENTIALS_TYPE: "PEM"
+      MQTT_SSL_PEM_CERT: "/config/server.pem"
+      MQTT_SSL_PEM_KEY: "/config/server_key.pem"
+      MQTT_SSL_PEM_KEY_PASSWORD: ""
+      MQTT_SSL_BIND_ADDRESS: "0.0.0.0"
+      MQTT_SSL_PORT: "8883"
 
+    volumes:
+      - tb-data:/data
+      - ./thingsboardCertificates/server.pem:/config/server.pem
+      - ./thingsboardCertificates/server_key.pem:/config/server_key.pem
 
+# ---------- VOLUMES ----------
 volumes:
   tb-postgres-data:
   tb-data:

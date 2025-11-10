@@ -41,14 +41,14 @@ jobs:
       - name: Wait for PostgreSQL
         run: |
           echo "⏳ Waiting for PostgreSQL to initialize..."
-          sleep 25
+          sleep 45
           docker ps
 
-      # ✅ Fix: Safely handle ThingsBoard initialization (no workflow failure)
       - name: Initialize ThingsBoard Database
         working-directory: /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server
         run: |
-          if [ "$(docker volume ls -q -f name=tb-data)" = "" ]; then
+          TB_VOLUME_EXISTS=$(docker volume ls -q -f name=tb-data)
+          if [ -z "$TB_VOLUME_EXISTS" ]; then
             echo "🧩 Running ThingsBoard installation..."
             docker compose run --rm -e INSTALL_TB=true -e LOAD_DEMO=true thingsboard-ce || \
               echo "⚠️ Installation skipped — ThingsBoard already initialized."
@@ -64,3 +64,9 @@ jobs:
           curl -f http://localhost:8000 || echo "⚠️ Backend not responding yet"
           echo "🌐 Checking ThingsBoard..."
           curl -f http://localhost:8080 || echo "⚠️ ThingsBoard UI check failed"
+
+      - name: Show Docker Logs (on failure)
+        if: failure()
+        run: |
+          echo "📜 Showing recent logs for debugging..."
+          docker compose logs --tail=50
