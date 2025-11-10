@@ -77,8 +77,10 @@ services:
 
     volumes:
       - tb-data:/data
-      - ./thingsboardCertificates/server.pem:/config/server.pem
+      - ./thingsboardCertificates/serverChain.pem:/config/server.pem
       - ./thingsboardCertificates/server_key.pem:/config/server_key.pem
+      - ./thingsboard.conf:/config/thingsboard.conf
+      - ./logback.xml:/config/logback.xml
 
 # ---------- VOLUMES ----------
 volumes:
