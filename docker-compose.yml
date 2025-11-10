@@ -61,8 +61,11 @@ services:
       - "8883:8883"
       - "5683-5688:5683-5688/udp"
     volumes:
-      - /home/ubuntu/yeti/thingsboard/Certificates:/usr/share/thingsboard/conf
       - tb-data:/data
+      - tb-logs:/var/log/thingsboard
+      - /home/ubuntu/yeti/thingsboard/Certificates/serverCert.pem:/usr/share/thingsboard/conf/serverCert.pem
+      - /home/ubuntu/yeti/thingsboard/Certificates/serverKey.pem:/usr/share/thingsboard/conf/serverKey.pem
+
     environment:
       TB_SERVICE_ID: tb-ce-node
       SPRING_DATASOURCE_URL: jdbc:postgresql://tb-postgres:5432/thingsboard
