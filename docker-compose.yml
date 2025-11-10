@@ -70,8 +70,8 @@ services:
       - tb-data:/data
 
       # SSL Certificates (ensure these files exist on host)
-      - ./thingsboardCertificates/serverCert.pem:/etc/thingsboard/conf/server.pem
-      - ./thingsboardCertificates/serverKey.pem:/etc/thingsboard/conf/server_key.pem
+      - ./thingsboardCertificates/serverCert.pem:/etc/thingsboard/conf/serverCert.pem
+      - ./thingsboardCertificates/serverKey.pem:/etc/thingsboard/conf/serverKey.pem
       - ./thingsboard.conf:/usr/share/thingsboard/conf/thingsboard.conf
 
 volumes:
