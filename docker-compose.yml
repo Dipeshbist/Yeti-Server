@@ -47,19 +47,6 @@ services:
       - tb-postgres-data:/var/lib/postgresql/data
     ports:
       - "55432:5432"
-  services:
-    tb-postgres:
-    image: postgres:16-alpine
-    container_name: tb-postgres
-    restart: always
-    environment:
-      POSTGRES_DB: thingsboard
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - tb-postgres-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
 
   thingsboard-ce:
     image: thingsboard/tb-node:4.2.1
