@@ -77,7 +77,7 @@ services:
       MQTT_SSL_PORT: "8883"
 
     volumes:
-      - /home/ubuntu/yeti/thingsboard/config:/config
+      - /home/ubuntu/yeti/thingsboard/config:/usr/share/thingsboard/conf/thingsboard.conf
 
 # ---------- VOLUMES ----------
 volumes:
