@@ -1,6 +1,3 @@
-# =====================================================
-#  YETI BACKEND + THINGSBOARD CE (with MQTT over SSL)
-# =====================================================
 services:
   # ---------- YETI BACKEND STACK ----------
   yeti-postgres:
@@ -56,39 +53,32 @@ services:
     restart: always
     depends_on:
       - tb-postgres
+    working_dir: /thingsboard
     ports:
-      - "8080:8080"             # HTTP UI/API
-      - "7070:7070"             # Edge RPC
-      - "1883:1883"             # MQTT (non-SSL)
-      - "8883:8883"             # MQTT over SSL
+      - "8080:8080"
+      - "7070:7070"
+      - "1883:1883"
+      - "8883:8883"
       - "5683-5688:5683-5688/udp"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "100m"
-        max-file: "10"
-
-    # ---------- SSL certificate volume ----------
     volumes:
-      # Mount your certificate directory from host
-      - /home/ubuntu/yeti/thingsboard/Certificates:/config:ro
-
-    # ---------- Environment configuration ----------
+      - /home/ubuntu/yeti/thingsboard/Certificates:/usr/share/thingsboard/conf
+      - tb-data:/data
     environment:
       TB_SERVICE_ID: tb-ce-node
       SPRING_DATASOURCE_URL: jdbc:postgresql://tb-postgres:5432/thingsboard
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
-
-      # ---------- MQTT over SSL Configuration ----------
+      TB_INSTALL_DATA_DIR: /data
+      MQTT_ENABLED: "true"
+      MQTT_BIND_PORT: "1883"
       MQTT_SSL_ENABLED: "true"
       MQTT_SSL_CREDENTIALS_TYPE: "PEM"
-      MQTT_SSL_PEM_CERT: "/config/serverChain.pem"
-      MQTT_SSL_PEM_KEY: "/config/serverKey.pem"
+      MQTT_SSL_PEM_CERT: "/usr/share/thingsboard/conf/serverCert.pem"
+      MQTT_SSL_PEM_KEY: "/usr/share/thingsboard/conf/serverKey.pem"
       MQTT_SSL_BIND_ADDRESS: "0.0.0.0"
       MQTT_SSL_BIND_PORT: "8883"
       MQTT_SSL_PROTOCOL: "TLSv1.2"
-      MQTT_SSL_CLIENT_AUTH: "required"     # change to "none" if one-way SSL only
+      MQTT_SSL_CLIENT_AUTH: "required"
 
 volumes:
   yeti-pgdata:
