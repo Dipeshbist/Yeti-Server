@@ -65,6 +65,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://tb-postgres:5432/thingsboard
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      # TB_CONFIG_DIR: /config
 
       # --- SSL configuration (official ThingsBoard PEM setup) ---
       MQTT_SSL_ENABLED: "true"
@@ -76,11 +77,7 @@ services:
       MQTT_SSL_PORT: "8883"
 
     volumes:
-      - tb-data:/data
-      - /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server/thingsboardCertificates/serverChain.pem:/config/serverCert.pem
-      - /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server/thingsboardCertificates/serverKey.pem:/config/serverKey.pem
-      - /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server/thingsboard.conf:/config/thingsboard.conf
-      - /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server/logback.xml:/config/logback.xml
+      - /home/ubuntu/yeti/thingsboard/config:/config
 
 # ---------- VOLUMES ----------
 volumes:
