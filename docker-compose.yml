@@ -55,32 +55,32 @@ services:
     depends_on:
       - tb-postgres
     ports:
-      - "8080:8080"              # HTTP UI/API
-      - "7070:7070"              # Edge RPC
-      - "1883:1883"              # MQTT (no SSL)
-      - "8883:8883"              # MQTT over SSL
+      - "8080:8080"             # HTTP UI/API
+      - "7070:7070"             # Edge RPC
+      - "1883:1883"             # MQTT (no SSL)
+      - "8883:8883"             # MQTT over SSL
       - "5683-5688:5683-5688/udp"
     environment:
       TB_SERVICE_ID: tb-ce-node
       SPRING_DATASOURCE_URL: jdbc:postgresql://tb-postgres:5432/thingsboard
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
-      TB_CONFIG_DIR: /config             # use /config as the custom directory
+
+      # --- SSL configuration (official ThingsBoard PEM setup) ---
       MQTT_SSL_ENABLED: "true"
       MQTT_SSL_CREDENTIALS_TYPE: "PEM"
-      MQTT_SSL_PEM_CERT: "/config/serverCert.pem"
-      MQTT_SSL_PEM_KEY: "/config/serverKey.pem"
+      MQTT_SSL_PEM_CERT: "./config/serverCert.pem"
+      MQTT_SSL_PEM_KEY: "./config/serverKey.pem"
+      MQTT_SSL_PEM_KEY_PASSWORD: ""
       MQTT_SSL_BIND_ADDRESS: "0.0.0.0"
-      MQTT_SSL_BIND_PORT: "8883"
-      MQTT_SSL_PROTOCOL: "TLSv1.2"
-      MQTT_SSL_CLIENT_AUTH: "none"
+      MQTT_SSL_PORT: "8883"
 
     volumes:
       - tb-data:/data
-      - ./thingsboardCertificates/serverChain.pem:/config/serverCert.pem:ro
-      - ./thingsboardCertificates/serverKey.pem:/config/serverKey.pem:ro
-      - ./thingsboard.conf:/config/thingsboard.conf:ro
-      - ./logback.xml:/config/logback.xml:ro
+      - /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server/thingsboardCertificates/serverChain.pem:/config/serverCert.pem
+      - /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server/thingsboardCertificates/serverKey.pem:/config/serverKey.pem
+      - /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server/thingsboard.conf:/config/thingsboard.conf
+      - /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server/logback.xml:/config/logback.xml
 
 # ---------- VOLUMES ----------
 volumes:
