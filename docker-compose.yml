@@ -87,3 +87,4 @@ volumes:
   yeti-pgdata:
   tb-postgres-data:
   tb-data:
+  tb-logs:
