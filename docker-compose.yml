@@ -69,16 +69,16 @@ services:
       # --- SSL configuration (official ThingsBoard PEM setup) ---
       MQTT_SSL_ENABLED: "true"
       MQTT_SSL_CREDENTIALS_TYPE: "PEM"
-      MQTT_SSL_PEM_CERT: "/config/server.pem"
-      MQTT_SSL_PEM_KEY: "/config/server_key.pem"
+      MQTT_SSL_PEM_CERT: "/config/serverCert.pem"
+      MQTT_SSL_PEM_KEY: "/config/serverKey.pem"
       MQTT_SSL_PEM_KEY_PASSWORD: ""
       MQTT_SSL_BIND_ADDRESS: "0.0.0.0"
       MQTT_SSL_PORT: "8883"
 
     volumes:
       - tb-data:/data
-      - ./thingsboardCertificates/serverChain.pem:/config/server.pem
-      - ./thingsboardCertificates/server_key.pem:/config/server_key.pem
+      - ./thingsboardCertificates/serverChain.pem:/config/serverCert.pem
+      - ./thingsboardCertificates/serverKey.pem:/config/serverKey.pem
       - ./thingsboard.conf:/config/thingsboard.conf
       - ./logback.xml:/config/logback.xml
 
