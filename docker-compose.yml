@@ -47,6 +47,19 @@ services:
       - tb-postgres-data:/var/lib/postgresql/data
     ports:
       - "55432:5432"
+  services:
+    tb-postgres:
+    image: postgres:16-alpine
+    container_name: tb-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: thingsboard
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - tb-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
 
   thingsboard-ce:
     image: thingsboard/tb-node:4.2.1
@@ -58,21 +71,22 @@ services:
       - "8080:8080"             # HTTP UI/API
       - "7070:7070"             # Edge RPC
       - "1883:1883"             # MQTT (no SSL)
-      - "8883:8883"             # MQTT over SSL placeholder (still open, unused)
+      - "8883:8883"             # MQTT over SSL
       - "5683-5688:5683-5688/udp"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "100m"
-        max-file: "10"
     environment:
       TB_SERVICE_ID: tb-ce-node
       SPRING_DATASOURCE_URL: jdbc:postgresql://tb-postgres:5432/thingsboard
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
-      # Default queue service is In-Memory; no MQTT SSL config needed
+    volumes:
+      # Persistent data volume for ThingsBoard
+      - tb-data:/data
+
+      # SSL Certificates (ensure these files exist on host)
+      - ./thingsboardCertificates/serverCert.pem:/etc/thingsboard/conf/server.pem
+      - ./thingsboardCertificates/serverKey.pem:/etc/thingsboard/conf/server_key.pem
 
 volumes:
-  yeti-pgdata:
   tb-postgres-data:
   tb-data:
+  yeti-pgdata:
