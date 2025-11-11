@@ -1,4 +1,6 @@
 # ---------- YETI BACKEND + THINGSBOARD CE ----------
+version: "3.8"
+
 services:
   # ---------- YETI BACKEND STACK ----------
   yeti-postgres:
@@ -10,7 +12,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: yeti_db
     volumes:
-      - yeti-pgdata:/var/lib/postgresql/data
+      - /home/ubuntu/yeti/server-db-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
 
@@ -34,59 +36,60 @@ services:
       sh -c "npx prisma migrate deploy || echo 'No pending migrations' &&
              node dist/src/main.js"
 
-  # ---------- THINGSBOARD CE STACK ----------
-  tb-postgres:
-    image: postgres:16
-    container_name: tb-postgres
-    restart: always
-    environment:
-      POSTGRES_DB: thingsboard
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - tb-postgres-data:/var/lib/postgresql/data
-    ports:
-      - "55432:5432"
+  # # ---------- THINGSBOARD CE STACK ----------
+  # tb-postgres:
+  #   image: postgres:16
+  #   container_name: tb-postgres
+  #   restart: always
+  #   environment:
+  #     POSTGRES_DB: thingsboard
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #   volumes:
+  #     - /home/ubuntu/yeti/things-db-data:/var/lib/postgresql/data
+  #   ports:
+  #     - "55432:5432"
 
-  thingsboard-ce:
-    image: thingsboard/tb-node:4.2.1
-    container_name: thingsboard-ce
-    restart: always
-    depends_on:
-      - tb-postgres
-    ports:
-      - "8080:8080"             # HTTP UI/API
-      - "7070:7070"             # Edge RPC
-      - "1883:1883"             # MQTT (no SSL)
-      - "8883:8883"             # MQTT over SSL
-      - "5683-5688:5683-5688/udp"
-    environment:
-      TB_SERVICE_ID: tb-ce-node
-      SPRING_DATASOURCE_URL: jdbc:postgresql://tb-postgres:5432/thingsboard
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
-      
-      # --- MQTT SSL configuration ---
-      MQTT_SSL_ENABLED: "true"
-      MQTT_SSL_CREDENTIALS_TYPE: "PEM"
-      MQTT_SSL_PEM_CERT: /config/serverCert.pem
-      MQTT_SSL_PEM_KEY: /config/serverKey.pem
-      MQTT_SSL_PEM_KEY_PASSWORD: ""
-      MQTT_SSL_BIND_ADDRESS: "0.0.0.0"
-      MQTT_SSL_BIND_PORT: "8883"
-      MQTT_SSL_PROTOCOL: "TLSv1.2"
-      
-    volumes:
-      # Mount the config directory containing certificates
-      - /home/ubuntu/yeti/thingsboard/config:/config
-    
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "100m"
-        max-file: "10"
+  # thingsboard-ce:
+  #   image: thingsboard/tb-node:4.2.1
+  #   container_name: thingsboard-ce
+  #   restart: always
+  #   depends_on:
+  #     - tb-postgres
+  #   ports:
+  #     - "8080:8080"             # HTTP Web UI / API
+  #     - "7070:7070"             # Edge RPC
+  #     - "1883:1883"             # MQTT (non-SSL)
+  #     - "8883:8883"             # MQTT over SSL
+  #     - "5683-5688:5683-5688/udp"  # CoAP / LwM2M
+  #   environment:
+  #     TB_SERVICE_ID: tb-ce-node
+  #     SPRING_DATASOURCE_URL: jdbc:postgresql://tb-postgres:5432/thingsboard
+  #     SPRING_DATASOURCE_USERNAME: postgres
+  #     SPRING_DATASOURCE_PASSWORD: postgres
 
-# ---------- VOLUMES ----------
+  #     # ---------- MQTT over SSL Configuration ----------
+  #     MQTT_ENABLED: "true"
+  #     MQTT_SSL_ENABLED: "true"
+  #     MQTT_SSL_CREDENTIALS_TYPE: "PEM"
+  #     MQTT_SSL_PEM_CERT: /certs/serverChain.pem
+  #     MQTT_SSL_PEM_KEY: /certs/serverKey.pem
+  #     MQTT_SSL_BIND_ADDRESS: "0.0.0.0"
+  #     MQTT_SSL_BIND_PORT: "8883"
+  #     MQTT_SSL_PROTOCOL: "TLSv1.2"
+  #     MQTT_SSL_CLIENT_AUTH: "required"
+
+  #   volumes:
+  #     # Mount directory containing your certificates (read-only)
+  #     - /home/ubuntu/yeti/thingsboard/Certificates:/certs:ro
+
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "100m"
+  #       max-file: "10"
+
+# ---------- NAMED VOLUMES ----------
 volumes:
   tb-postgres-data:
   tb-data:
