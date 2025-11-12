@@ -91,6 +91,4 @@ services:
 
 # ---------- NAMED VOLUMES ----------
 volumes:
-  tb-postgres-data:
-  tb-data:
   yeti-pgdata:
