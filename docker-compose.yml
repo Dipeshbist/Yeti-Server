@@ -81,7 +81,7 @@ services:
       # ---------- JVM MEMORY LIMITS ----------
       JAVA_OPTS: "-Xms512M -Xmx1024M"
 
-      volumes:
+    volumes:
       - /home/ubuntu/yeti/thingsboard/Certificates:/certs:ro
 
     logging:
