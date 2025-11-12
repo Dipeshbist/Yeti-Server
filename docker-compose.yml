@@ -14,7 +14,7 @@ services:
     volumes:
       - /home/ubuntu/yeti/server-db-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5431:5432"   # host 5431 → container 5432
 
   yeti-backend:
     build:
@@ -29,65 +29,66 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgres://postgres:postgres@yeti-postgres:5432/yeti_db
+      DATABASE_URL: postgres://postgres:postgres@yeti-postgres:5432/yeti_db  # internal container port!
       NODE_ENV: production
       PORT: 8000
     command: >
-      sh -c "npx prisma migrate deploy || echo 'No pending migrations' &&
-             node dist/src/main.js"
+      sh -c "npx prisma migrate deploy || echo 'No pending migrations' && node dist/src/main.js"
 
-  # # ---------- THINGSBOARD CE STACK ----------
-  # tb-postgres:
-  #   image: postgres:16
-  #   container_name: tb-postgres
-  #   restart: always
-  #   environment:
-  #     POSTGRES_DB: thingsboard
-  #     POSTGRES_USER: postgres
-  #     POSTGRES_PASSWORD: postgres
-  #   volumes:
-  #     - /home/ubuntu/yeti/things-db-data:/var/lib/postgresql/data
-  #   ports:
-  #     - "55432:5432"
+  # ---------- THINGSBOARD CE STACK ----------
+  tb-postgres:
+    image: postgres:16
+    container_name: tb-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: thingsboard
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - /home/ubuntu/yeti/things-db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"  # host 5432 for TB, OK
 
-  # thingsboard-ce:
-  #   image: thingsboard/tb-node:4.2.1
-  #   container_name: thingsboard-ce
-  #   restart: always
-  #   depends_on:
-  #     - tb-postgres
-  #   ports:
-  #     - "8080:8080"             # HTTP Web UI / API
-  #     - "7070:7070"             # Edge RPC
-  #     - "1883:1883"             # MQTT (non-SSL)
-  #     - "8883:8883"             # MQTT over SSL
-  #     - "5683-5688:5683-5688/udp"  # CoAP / LwM2M
-  #   environment:
-  #     TB_SERVICE_ID: tb-ce-node
-  #     SPRING_DATASOURCE_URL: jdbc:postgresql://tb-postgres:5432/thingsboard
-  #     SPRING_DATASOURCE_USERNAME: postgres
-  #     SPRING_DATASOURCE_PASSWORD: postgres
+  thingsboard-ce:
+    image: thingsboard/tb-node:4.2.1
+    container_name: thingsboard-ce
+    restart: always
+    depends_on:
+      - tb-postgres
+    ports:
+      - "8080:8080"              # HTTP Web UI / API
+      - "7070:7070"              # Edge RPC
+      - "1883:1883"              # MQTT (non-SSL)
+      - "8883:8883"              # MQTT over SSL
+      - "5683-5688:5683-5688/udp" # CoAP / LwM2M
+    environment:
+      TB_SERVICE_ID: tb-ce-node
+      SPRING_DATASOURCE_URL: jdbc:postgresql://tb-postgres:5432/thingsboard
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
 
-  #     # ---------- MQTT over SSL Configuration ----------
-  #     MQTT_ENABLED: "true"
-  #     MQTT_SSL_ENABLED: "true"
-  #     MQTT_SSL_CREDENTIALS_TYPE: "PEM"
-  #     MQTT_SSL_PEM_CERT: /certs/serverChain.pem
-  #     MQTT_SSL_PEM_KEY: /certs/serverKey.pem
-  #     MQTT_SSL_BIND_ADDRESS: "0.0.0.0"
-  #     MQTT_SSL_BIND_PORT: "8883"
-  #     MQTT_SSL_PROTOCOL: "TLSv1.2"
-  #     MQTT_SSL_CLIENT_AUTH: "required"
+      # ---------- MQTT over SSL Configuration ----------
+      MQTT_ENABLED: "true"
+      MQTT_SSL_ENABLED: "true"
+      MQTT_SSL_CREDENTIALS_TYPE: "PEM"
+      MQTT_SSL_PEM_CERT: /certs/serverChain.pem
+      MQTT_SSL_PEM_KEY: /certs/serverKey.pem
+      MQTT_SSL_BIND_ADDRESS: "0.0.0.0"
+      MQTT_SSL_BIND_PORT: "8883"
+      MQTT_SSL_PROTOCOL: "TLSv1.2"
+      MQTT_SSL_CLIENT_AUTH: "required"
 
-  #   volumes:
-  #     # Mount directory containing your certificates (read-only)
-  #     - /home/ubuntu/yeti/thingsboard/Certificates:/certs:ro
+      # ---------- JVM MEMORY LIMITS ----------
+      JAVA_OPTS: "-Xms512M -Xmx1024M"
 
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: "100m"
-  #       max-file: "10"
+      volumes:
+      - /home/ubuntu/yeti/thingsboard/Certificates:/certs:ro
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
 
 # ---------- NAMED VOLUMES ----------
 volumes:
