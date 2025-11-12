@@ -347,7 +347,7 @@ export class AppController {
     }
 
     // --- ONLINE CHECK: lastActivityTime must be recent (<= 10s) ---
-    const attrs = await this.tb.getDeviceAttributes(deviceId, 'SERVER_SCOPE');
+    const attrs = await this.tb.getDeviceAttributes(deviceId, 'CLIENT_SCOPE');
     const last = Array.isArray(attrs)
       ? attrs.find((a: any) => a.key === 'lastActivityTime')
       : null;

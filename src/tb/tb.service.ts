@@ -561,7 +561,7 @@ export class TbService {
     // ---- 1️⃣ Fetch mb_attr for sensor name mapping ----
     const sidMap: Record<string, string> = {};
     try {
-      const mbAttrUrl = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/attributes/SERVER_SCOPE?keys=mb_attr`;
+      const mbAttrUrl = `${this.base()}/api/plugins/telemetry/DEVICE/${deviceId}/values/attributes/CLIENT_SCOPE?keys=mb_attr`;
       const { data: mbAttrData } = await firstValueFrom(
         this.http.get(mbAttrUrl, { headers: await this.authHeaders() }),
       );
