@@ -48,7 +48,7 @@ EXPOSE 8000
 RUN npx prisma generate
 
 # Optional: Verify build before starting (so Docker fails early if dist missing)
-RUN test -f dist/main.js || (echo "❌ Build output not found: dist/src/main.js" && exit 1)
+RUN test -f dist/src/main.js || (echo "❌ Build output not found: dist/src/main.js" && exit 1)
 
 # Start the NestJS app
 CMD ["node", "dist/src/main.js"]
