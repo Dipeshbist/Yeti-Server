@@ -1,12 +1,10 @@
 # ---------- YETI BACKEND + THINGSBOARD CE ----------
 version: "3.8"
-
 services:
   # ---------- YETI BACKEND STACK ----------
   yeti-postgres:
     image: postgres:16-alpine
     container_name: yeti-postgres
-    restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -15,13 +13,11 @@ services:
       - /home/ubuntu/yeti/server-db-data:/var/lib/postgresql/data
     ports:
       - "5431:5432"   # host 5431 → container 5432
-
   yeti-backend:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: yeti-backend
-    restart: always
     depends_on:
       - yeti-postgres
     ports:
@@ -29,17 +25,15 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgres://postgres:postgres@yeti-postgres:5432/yeti_db  # internal container port!
+      DATABASE_URL: postgres://postgres:postgres@yeti-postgres:5432/yeti_db
       NODE_ENV: production
       PORT: 8000
     command: >
-      sh -c "npx prisma migrate deploy || echo 'No pending migrations' && node dist/src/main.js"
-
+      sh -c "npx prisma migrate deploy || echo 'No pending migrations' && node dist/index.js"
   # ---------- THINGSBOARD CE STACK ----------
   tb-postgres:
     image: postgres:16
     container_name: tb-postgres
-    restart: always
     environment:
       POSTGRES_DB: thingsboard
       POSTGRES_USER: postgres
@@ -48,11 +42,17 @@ services:
       - /home/ubuntu/yeti/things-db-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"  # host 5432 for TB, OK
-
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 2G
+        reservations:
+          cpus: '0.25'
+          memory: 1G
   thingsboard-ce:
     image: thingsboard/tb-node:4.2.1
     container_name: thingsboard-ce
-    restart: always
     depends_on:
       - tb-postgres
     ports:
@@ -66,7 +66,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://tb-postgres:5432/thingsboard
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
-
+      # INSTALL_TB: true
+      # LOAD_DEMO: true
       # ---------- MQTT over SSL Configuration ----------
       MQTT_ENABLED: "true"
       MQTT_SSL_ENABLED: "true"
@@ -77,19 +78,23 @@ services:
       MQTT_SSL_BIND_PORT: "8883"
       MQTT_SSL_PROTOCOL: "TLSv1.2"
       MQTT_SSL_CLIENT_AUTH: "required"
-
       # ---------- JVM MEMORY LIMITS ----------
-      JAVA_OPTS: "-Xms512M -Xmx1024M"
-
+      JAVA_OPTS: "-Xms1G -Xmx5G"
     volumes:
       - /home/ubuntu/yeti/thingsboard/Certificates:/certs:ro
-
     logging:
       driver: "json-file"
       options:
         max-size: "100m"
         max-file: "10"
-
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 6G
+        reservations:
+          cpus: '0.5'
+          memory: 2G
 # ---------- NAMED VOLUMES ----------
 volumes:
   yeti-pgdata:
