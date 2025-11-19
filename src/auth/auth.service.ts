@@ -22,38 +22,37 @@ export class AuthService {
     private readonly notifyMail: NotifyMailService,
   ) {}
 
-  async register(dto: RegisterDto) {
+  async register(registerdto: RegisterDto) {
     // Check for duplicate email or phone
     const existingUser = await this.db.user.findFirst({
       where: {
-        OR: [{ email: dto.email }, { phone: dto.phone }],
+        OR: [{ email: registerdto.email }, { phone: registerdto.phone }],
       },
     });
 
     if (existingUser) {
       throw new BadRequestException(
-        existingUser.email === dto.email
+        existingUser.email === registerdto.email
           ? 'Email already registered'
           : 'Phone number already registered',
       );
     }
 
-    const hashed = await bcrypt.hash(dto.password, 10);
-
+    const hashed = await bcrypt.hash(registerdto.password, 10);
     const user = await this.db.user.create({
       data: {
-        email: dto.email,
-        phone: dto.phone, // ✅ new field
+        email: registerdto.email,
+        phone: registerdto.phone,
         password: hashed,
-        firstName: dto.firstName ?? null,
-        lastName: dto.lastName ?? null,
+        firstName: registerdto.firstName ?? null,
+        lastName: registerdto.lastName ?? null,
         role: 'user',
         status: 'PENDING',
         customerId: null,
         auditLogsCreated: {
           create: {
             action: 'USER_REGISTERED',
-            details: `email=${dto.email}, phone=${dto.phone}`,
+            details: `email=${registerdto.email}, phone=${registerdto.phone}`,
           },
         },
       },
@@ -80,15 +79,20 @@ export class AuthService {
     };
   }
 
-  async login(dto: LoginDto) {
-    const user = await this.db.user.findUnique({ where: { email: dto.email } });
+  async login(loginDto: LoginDto) {
+    const user = await this.db.user.findUnique({
+      where: { email: loginDto.email },
+    });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     if (user.status !== 'VERIFIED' || !user.isActive) {
       throw new UnauthorizedException('Account not verified');
     }
 
-    const isPasswordCorrect = await bcrypt.compare(dto.password, user.password);
+    const isPasswordCorrect = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
     if (!isPasswordCorrect)
       throw new UnauthorizedException('Invalid credentials');
 
@@ -151,13 +155,12 @@ export class AuthService {
         lastName: true,
         role: true,
         customerId: true,
-        profileImage: true, // ✅ include avatar field
-        cloudinaryId: true, // optional if you store this
+        profileImage: true,
+        cloudinaryId: true,
       },
     });
 
     if (!user) throw new Error('User not found');
-
     return user;
   }
 

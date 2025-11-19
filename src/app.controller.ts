@@ -53,21 +53,6 @@ export class AppController {
     });
   }
 
-  // @Get('my-devices')
-  // @UseGuards(JwtAuthGuard)
-  // async getMyDevices(@Request() req) {
-  //   if (!req.user || !req.user.customerId) {
-  //     throw new UnauthorizedException('Invalid user context');
-  //   }
-
-  //   const customerId = req.user.customerId;
-
-  //   return this.tb.getCustomerDeviceInfos(customerId, {
-  //     page: 0,
-  //     pageSize: 10,
-  //   });
-  // }
-
   @Get('my-devices')
   @UseGuards(JwtAuthGuard)
   async getMyDevices(@Request() req) {
@@ -446,8 +431,8 @@ export class AppController {
 
     // ✅ Use date range if provided
     if (startDate && endDate) {
-      startTs = new Date(startDate).getTime();
-      endTs = new Date(endDate).getTime();
+      startTs = Number(startDate);
+      endTs = Number(endDate);
     } else {
       // fallback to hours-based logic
       endTs = Date.now();
@@ -618,15 +603,6 @@ export class AppController {
     );
 
     return liveTelemetry;
-    // return {
-    //   deviceId,
-    //   data: liveTelemetry,
-    //   timestamp: Date.now(),
-    //   maxAgeSeconds,
-    //   dataCount: Object.keys(liveTelemetry).length,
-    //   keys: keyArray,
-    //   isLive: Object.values(liveTelemetry).some((item) => item.isLive),
-    // };
   }
 
   @Get('devices/:deviceId/attributes/:scope')

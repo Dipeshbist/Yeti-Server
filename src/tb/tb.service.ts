@@ -154,9 +154,6 @@ export class TbService {
 
     const url = `${this.base()}/api/tenant/dashboards?${qs.toString()}`;
 
-    // Optional: log for debugging
-    // this.log.debug(`TB getAllDashboards -> ${url}`);
-
     const { data } = await firstValueFrom(
       this.http.get(url, { headers: await this.authHeaders() }),
     );

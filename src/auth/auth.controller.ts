@@ -53,29 +53,11 @@ export class AuthController {
     };
   }
 
-  // @Get('profile')
-  // @UseGuards(JwtAuthGuard)
-  // getProfile(
-  //   @Request()
-  //   req: {
-  //     user: {
-  //       sub: string;
-  //       email: string;
-  //       role: string;
-  //       customerId: string | null;
-  //     };
-  //   },
-  // ) {
-  //   return { success: true, user: req.user };
-  // }
-
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   async getProfile(@Request() req) {
-    const userId = req.user.userId || req.user.sub; // JWT payload may differ
-
+    const userId = req.user.userId || req.user.sub;
     const user = await this.authService.getUserById(userId);
-
     return {
       success: true,
       user,
@@ -96,12 +78,12 @@ export class AuthController {
     @UploadedFile() file: Express.Multer.File,
     @Request() req,
   ) {
-    const userId = req.user.userId || req.user.sub; // ✅ supports both token styles
+    const userId = req.user.userId || req.user.sub; // supports both token styles
 
-    // 1️⃣ Fetch existing user to check for an old image
+    // Fetch existing user to check for an old image
     const existingUser = await this.authService.getUserById(userId);
 
-    // 2️⃣ If a previous image exists, delete it from Cloudinary
+    // If a previous image exists, delete it from Cloudinary
     if (existingUser.cloudinaryId) {
       try {
         await this.cloudinaryService.deleteImage(existingUser.cloudinaryId);
@@ -111,7 +93,7 @@ export class AuthController {
       }
     }
 
-    // 3️⃣ Upload the new image
+    // Upload the new image
     const result = (await this.cloudinaryService.uploadImage(
       file,
       'avatars',
@@ -120,14 +102,14 @@ export class AuthController {
       public_id: string;
     };
 
-    // 4️⃣ Save new URL + Cloudinary public_id in DB
+    // Save new URL + Cloudinary public_id in DB
     await this.authService.updateProfileImage(
       userId,
       result.secure_url,
       result.public_id,
     );
 
-    // 5️⃣ Return the updated user record for frontend refresh
+    //Return the updated user record for frontend refresh
     const updatedUser = await this.authService.getUserById(userId);
 
     return { success: true, user: updatedUser };
@@ -138,17 +120,17 @@ export class AuthController {
   async deleteAvatar(@Request() req) {
     const userId = req.user.userId || req.user.sub;
 
-    // 1️⃣ Get user from DB
+    // Get user from DB
     const user = await this.authService.getUserById(userId);
 
     if (!user?.cloudinaryId) {
       throw new BadRequestException('No avatar to delete');
     }
 
-    // 2️⃣ Delete from Cloudinary
+    // Delete from Cloudinary
     await this.cloudinaryService.deleteImage(user.cloudinaryId);
 
-    // 3️⃣ Clear image fields in DB
+    //  Clear image fields in DB
     await this.authService.removeProfileImage(userId);
 
     return { success: true, message: 'Avatar removed successfully' };
