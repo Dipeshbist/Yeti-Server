@@ -24,7 +24,9 @@ jobs:
         working-directory: /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server
         run: |
           echo "🧹 Cleaning up old containers..."
-          docker compose down --timeout 60 || true
+          docker compose stop yeti-backend || true
+          docker compose rm -f yeti-backend || true
+
 
       - name: Build Docker Compose services
         working-directory: /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server
@@ -44,16 +46,13 @@ jobs:
           sleep 45
           docker ps
 
-      - name: Initialize ThingsBoard Database
-        working-directory: /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server
+      - name: Initialize ThingsBoard Database (only on first deployment)
         run: |
-          TB_VOLUME_EXISTS=$(docker volume ls -q -f name=tb-data)
-          if [ -z "$TB_VOLUME_EXISTS" ]; then
-            echo "🧩 Running ThingsBoard installation..."
-            docker compose run --rm -e INSTALL_TB=true -e LOAD_DEMO=true thingsboard-ce || \
-              echo "⚠️ Installation skipped — ThingsBoard already initialized."
+          if [ -d "/home/ubuntu/yeti/things-db-data/base" ]; then
+            echo "✅ ThingsBoard database already exists — skipping installation."
           else
-            echo "✅ ThingsBoard already initialized; skipping."
+            echo "🧩 Running initial ThingsBoard installation..."
+            docker compose run --rm -e INSTALL_TB=true -e LOAD_DEMO=true thingsboard-ce
           fi
 
       - name: Verify Deployment

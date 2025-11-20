@@ -30,6 +30,7 @@ services:
       PORT: 8000
     command: >
       sh -c "npx prisma migrate deploy || echo 'No pending migrations' && node dist/src/main.js"
+  
   # ---------- THINGSBOARD CE STACK ----------
   tb-postgres:
     image: postgres:16
@@ -41,7 +42,7 @@ services:
     volumes:
       - /home/ubuntu/yeti/things-db-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"  # host 5432 for TB, OK
+      - "5432:5432"  # host 5432 for TB and container 5432
     deploy:
       resources:
         limits:
