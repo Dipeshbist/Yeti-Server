@@ -46,14 +46,27 @@ jobs:
           sleep 45
           docker ps
 
+      # - name: Initialize ThingsBoard Database (only first deployment)
+      #   working-directory: /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server
+      #   run: |
+      #     if [ ! -d "/home/ubuntu/yeti/things-db-data/base" ]; then
+      #       echo "🧩 Running initial ThingsBoard installation..."
+      #       docker compose run --rm -e INSTALL_TB=true -e LOAD_DEMO=true thingsboard-ce
+      #     else
+      #       echo "✅ ThingsBoard database already exists — skipping installation."
+      #     fi
+
       - name: Initialize ThingsBoard Database (only first deployment)
         working-directory: /home/ubuntu/yeti/yeti-backend/actions-runner/_work/Yeti-Server/Yeti-Server
         run: |
-          if [ ! -d "/home/ubuntu/yeti/things-db-data/base" ]; then
+          echo "🔍 Checking if ThingsBoard is already initialized..."
+          EXISTS=$(docker exec tb-postgres psql -U postgres -d thingsboard -tAc "SELECT 1 FROM tb_user WHERE email='sysadmin@thingsboard.org';")
+
+          if [ "$EXISTS" = "1" ]; then
+            echo "✅ ThingsBoard already initialized — skipping installation."
+          else
             echo "🧩 Running initial ThingsBoard installation..."
             docker compose run --rm -e INSTALL_TB=true -e LOAD_DEMO=true thingsboard-ce
-          else
-            echo "✅ ThingsBoard database already exists — skipping installation."
           fi
 
       - name: Verify Deployment
